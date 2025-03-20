@@ -18,5 +18,68 @@
 @layer base {
 	body {
 		@apply bg-zinc-950 text-neutral-200;
+    position: relative;
+    overflow-x: hidden;
 	}
+  
+  .background-gradient {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    z-index: -1;
+    opacity: 0.6;
+  }
+  
+  .background-gradient::before {
+    content: '';
+    position: absolute;
+    top: -350px;
+    left: -100px;
+    width: 800px;
+    height: 800px;
+    border-radius: 100%;
+    background: radial-gradient(circle, rgba(138, 58, 185, 0.4) 0%, rgba(79, 0, 128, 0.05) 70%, transparent 100%);
+    filter: blur(60px);
+  }
+  
+  .background-gradient::after {
+    content: '';
+    position: absolute;
+    top: -200px;
+    right: -400px;
+    width: 1000px;
+    height: 1000px;
+    border-radius: 100%;
+    background: radial-gradient(circle, rgba(29, 78, 216, 0.4) 0%, rgba(29, 78, 216, 0.05) 60%, transparent 100%);
+    filter: blur(60px);
+  }
+}
+
+@layer utilities {
+  .shadow-glow {
+    box-shadow: 0 0 15px 2px rgba(167, 38, 169, 0.5);
+  }
+  
+  .shadow-glow-xl {
+    box-shadow: 0 0 30px 5px rgba(220, 38, 169, 0.6);
+  }
+}
+
+@layer components {
+  .glassmorphism-button {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .glassmorphism-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
 }
