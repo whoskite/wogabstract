@@ -73,21 +73,29 @@ const DailyLogin: React.FC<DailyLoginProps> = ({
       
       {/* Days Grid */}
       <div className="grid grid-cols-7 gap-1 mb-4">
-        {days.map(day => (
-          <div 
-            key={day}
-            className={`
-              flex items-center justify-center w-8 h-8 rounded-md text-xs font-bold
-              ${currentDay === day 
-                ? 'bg-neon-blue/20 border border-neon-blue text-white' 
-                : claimedDays.includes(day)
-                  ? 'bg-green-900/30 border border-green-500/50 text-green-400'
-                  : 'bg-zinc-800/50 border border-zinc-700 text-zinc-400'}
-            `}
-          >
-            {day}
-          </div>
-        ))}
+        {days.map(day => {
+          const isCurrentDay = !isClaimed && currentDay === day;
+          const isNextDay = isClaimed && day === currentDay + 1;
+          const isClaimedDay = claimedDays.includes(day);
+          
+          return (
+            <div 
+              key={day}
+              className={`
+                flex items-center justify-center w-8 h-8 rounded-md text-xs font-bold transition-all duration-300
+                ${isNextDay 
+                  ? 'bg-neon-blue/20 border border-neon-blue text-white animate-pulse' 
+                  : isCurrentDay
+                    ? 'bg-neon-blue/20 border border-neon-blue text-white' 
+                    : isClaimedDay
+                      ? 'bg-green-900/30 border border-green-500/50 text-green-400'
+                      : 'bg-zinc-800/50 border border-zinc-700 text-zinc-400'}
+              `}
+            >
+              {day}
+            </div>
+          );
+        })}
       </div>
       
       {/* Today's Reward */}
@@ -135,7 +143,13 @@ const DailyLogin: React.FC<DailyLoginProps> = ({
       
       {/* Next Reward */}
       <div className="mt-3 text-center">
-        <p className="text-xs text-zinc-400">Next reward: <span className="text-neon-pink">{nextReward}</span></p>
+        <p className="text-xs text-zinc-400">
+          {isClaimed ? (
+            <>Next reward (Day {currentDay + 1}): <span className="text-neon-pink">{nextReward}</span></>
+          ) : (
+            <>Next reward: <span className="text-neon-pink">{nextReward}</span></>
+          )}
+        </p>
       </div>
       
       {/* Decorative Elements */}

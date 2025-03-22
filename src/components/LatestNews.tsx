@@ -48,18 +48,20 @@ export default function LatestNews({ maxArticles = 3 }: LatestNewsProps) {
   const articles = newsArticles.slice(0, maxArticles);
   
   return (
-    <div className="bg-zinc-900/95 border border-neon-blue/40 rounded-xl p-6 shadow-lg backdrop-blur-md w-full">
-      <h2 className="text-2xl font-bold text-white mb-6 text-shadow border-b border-zinc-700 pb-3">
+    <div className="bg-black/95 border border-zinc-800 rounded-xl p-4 shadow-lg backdrop-blur-md w-full">
+      <h2 className="text-xl font-bold text-white mb-3 border-b border-zinc-700/50 pb-2">
         Latest Updates <span className="text-yellow-400">_</span>
       </h2>
       
-      <div className="space-y-6">
-        {articles.map((article) => (
-          <div 
-            key={article.id} 
-            className="flex flex-col md:flex-row gap-4 pb-4 border-b border-zinc-800 hover:bg-zinc-800/30 rounded-lg p-2 transition-all duration-300"
+      <div className="flex flex-wrap gap-4">
+        {articles.slice(0, 2).map((article, index) => (
+          <a 
+            key={article.id}
+            href={article.link}
+            className="w-[calc(50%-8px)] flex flex-col group hover:bg-zinc-800/30 transition-all duration-200 rounded-sm"
+            aria-label={`Read more about ${article.title}`}
           >
-            <div className="w-full md:w-24 h-24 relative rounded-lg overflow-hidden flex-shrink-0">
+            <div className="h-[148px] relative flex-shrink-0 overflow-hidden">
               <Image 
                 src={article.imageUrl} 
                 alt={article.title}
@@ -68,25 +70,19 @@ export default function LatestNews({ maxArticles = 3 }: LatestNewsProps) {
               />
             </div>
             
-            <div className="flex-1">
-              <h3 className="text-white font-bold mb-1 text-lg">{article.title}</h3>
-              <p className="text-zinc-400 text-sm mb-2">{article.description}</p>
+            <div className="flex flex-col mt-1">
+              <h3 className="text-white font-bold text-xs uppercase tracking-wide group-hover:text-yellow-400 transition-colors">{article.title}</h3>
+              <p className="text-zinc-400 text-[11px] line-clamp-3 my-1">{article.description}</p>
               <div className="flex items-center justify-between">
-                <span className="text-zinc-500 text-xs">{article.date}</span>
-                <a 
-                  href={article.link} 
-                  className="text-yellow-400 text-xs hover:text-yellow-300 transition-colors"
-                >
-                  Read more
-                </a>
+                <span className="text-zinc-500 text-[10px]">{`${article.date.substring(0, 4)}-${article.date.substring(5)}`}</span>
               </div>
             </div>
-          </div>
+          </a>
         ))}
       </div>
       
-      <div className="mt-4 text-center">
-        <button className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm border border-zinc-700 transition-colors">
+      <div className="mt-3 text-center">
+        <button className="px-4 py-1.5 bg-zinc-800/50 hover:bg-zinc-700 text-zinc-300 rounded-md text-xs border border-zinc-700/50 transition-colors">
           View All Updates
         </button>
       </div>

@@ -598,8 +598,8 @@ function DappContent() {
     // Update multiplier
     setMultiplier(2.0);
     
-    // Show success toast
-    showToast(`🎉 Daily reward claimed! Your multiplier is now ${2.0}x`, 'success');
+    // Show success toast notification
+    showToast(`🎉 Daily reward claimed! Your multiplier is now 2.0x`, 'success');
     
     // Play notification sound
     playNotificationSound();
