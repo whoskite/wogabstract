@@ -90,8 +90,8 @@ const data: AppItem[] = [
 
 // Constants
 const DOCK_HEIGHT = 80;
-const DEFAULT_MAGNIFICATION = 58;
-const DEFAULT_DISTANCE = 100;
+const DEFAULT_MAGNIFICATION = 70;
+const DEFAULT_DISTANCE = 120;
 const DEFAULT_PANEL_HEIGHT = 56;
 
 // Context
@@ -112,6 +112,17 @@ function useDock() {
   return context;
 }
 
+// Add this near the top of the file with other styling
+const styles = `
+  .drop-shadow-glow {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+  }
+  
+  .group:hover .drop-shadow-glow {
+    filter: drop-shadow(0 0 8px rgba(50, 200, 255, 0.8));
+  }
+`;
+
 export function AppleStyleDock() {
   const mouseX = useMotionValue(Infinity);
   const isHovered = useMotionValue(0);
@@ -121,13 +132,16 @@ export function AppleStyleDock() {
   const { play: playHoverSound } = useSoundEffect('/sounds/hover.mp3');
   
   // Spring configuration
-  const spring = { mass: 0.1, stiffness: 150, damping: 12 };
+  const spring = { mass: 0.2, stiffness: 180, damping: 15 };
   const magnification = DEFAULT_MAGNIFICATION;
   const distance = DEFAULT_DISTANCE;
   const panelHeight = DEFAULT_PANEL_HEIGHT;
 
   return (
     <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center">
+      {/* Add the styles */}
+      <style jsx global>{styles}</style>
+      
       <motion.div
         onMouseMove={(e) => {
           isHovered.set(1);
@@ -147,7 +161,10 @@ export function AppleStyleDock() {
           isHovered.set(0);
           mouseX.set(Infinity);
         }}
-        className="flex items-center h-14 rounded-full gap-2 px-4 bg-black border border-zinc-700 shadow-lg"
+        className="flex items-center h-16 rounded-full gap-2 px-5 bg-black/80 backdrop-blur-md border border-zinc-700/80 shadow-xl"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", delay: 0.2 }}
       >
         <DockContext.Provider value={{ mouseX, spring, distance, magnification }}>
           {data.map((app) => (
@@ -171,7 +188,7 @@ export function AppleStyleDock() {
                   onMouseEnter={() => playHoverSound()}
                 >
                   <DockIcon>
-                    <app.icon className="text-white group-hover:text-zinc-300 transition-colors" />
+                    <app.icon className="text-zinc-200 group-hover:text-white transition-colors drop-shadow-glow" />
                   </DockIcon>
                 </a>
               </Link>
@@ -220,7 +237,7 @@ function DockItem({
         playHoverSound();
       }}
       onHoverEnd={() => isHovered.set(0)}
-      whileHover={{ scale: 1.1 }}
+      whileHover={{ scale: 1.2 }}
       transition={{ type: "spring", stiffness: 400, damping: 17 }}
     >
       {React.Children.map(children, (child) => {
@@ -248,6 +265,8 @@ function DockIcon({
     <motion.div 
       style={{ width: iconSize, height: iconSize }}
       className="flex items-center justify-center"
+      whileHover={{ scale: 1.1 }}
+      transition={{ type: "spring", stiffness: 500, damping: 15 }}
     >
       {children}
     </motion.div>
@@ -261,31 +280,24 @@ function DockLabel({
   children: React.ReactNode;
   isHovered?: MotionValue<number>;
 }) {
-  const [visible, setVisible] = useState(false);
+  // Always create the motion values
+  const defaultIsHovered = useMotionValue(0);
+  const actualIsHovered = isHovered || defaultIsHovered;
   
-  useEffect(() => {
-    if (!isHovered) return;
-    
-    const unsubscribe = isHovered.on('change', (latest) => {
-      setVisible(latest === 1);
-    });
-    
-    return () => unsubscribe();
-  }, [isHovered]);
+  // Now use transform with the actual value (conditional usage of existing value, not conditional hooks)
+  const labelOpacity = useTransform(actualIsHovered, [0, 1], [0, 1]);
+  const labelY = useTransform(actualIsHovered, [0, 1], [10, 0]);
+  
+  const springOptions = { stiffness: 400, damping: 30 };
+  const opacity = useSpring(labelOpacity, springOptions);
+  const y = useSpring(labelY, springOptions);
   
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0, y: 0 }}
-          animate={{ opacity: 1, y: -10 }}
-          exit={{ opacity: 0, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="absolute -top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap rounded-md bg-zinc-800 px-2 py-1 text-xs text-white"
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <motion.div
+      style={{ opacity, y }}
+      className="absolute -top-10 rounded-lg px-3 py-1 bg-black/80 backdrop-blur-md border border-zinc-600/50 text-xs text-white font-medium whitespace-nowrap pointer-events-none"
+    >
+      {children}
+    </motion.div>
   );
 } 

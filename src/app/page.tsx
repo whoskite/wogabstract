@@ -99,6 +99,16 @@ function DappContent() {
   // Background music
   const { isPlaying, volume, setVolume, play: playBgMusic, stop: stopBgMusic } = 
     useBackgroundMusic('/sounds/lofi.mp3', 0.05);
+  
+  // Auto-play background music when component mounts
+  useEffect(() => {
+    // Small delay to ensure browser is ready
+    const timer = setTimeout(() => {
+      playBgMusic();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [playBgMusic]);
     
   // Toggle music function
   const toggleMusic = () => {
@@ -149,7 +159,7 @@ function DappContent() {
   // Add state variable for controlling the central status modal
   const [showTxModal, setShowTxModal] = useState(false);
   // Add new state variables for stats
-  const [streakCount, setStreakCount] = useState(3);
+  const [streakCount, setStreakCount] = useState(2);
   const [multiplier, setMultiplier] = useState(1.5);
   // Add page loading state
   const [isPageLoading, setIsPageLoading] = useState(false);  // Start as false
@@ -165,7 +175,7 @@ function DappContent() {
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   
   // Add state for daily login
-  const [streak, setStreak] = useState(3);
+  const [streak, setStreak] = useState(2);
   const [claimedDays, setClaimedDays] = useState<number[]>([1, 2]);
   const [currentDay, setCurrentDay] = useState(3);
   const [todayReward, setTodayReward] = useState('1.5x');
@@ -589,20 +599,41 @@ function DappContent() {
 
   // Add function to handle daily claim
   const handleDailyClaim = () => {
-    // Update streak
-    setStreak(prevStreak => prevStreak + 1);
-    
-    // Update claimed days
+    // Update claimed days first
     setClaimedDays(prev => [...prev, currentDay]);
     
-    // Update multiplier
-    setMultiplier(2.0);
+    // Update streak to match the claimed day (current streak is one less than the day being claimed)
+    setStreak(currentDay);
     
-    // Show success toast notification
-    showToast(`🎉 Daily reward claimed! Your multiplier is now 2.0x`, 'success');
+    // Check if this is a weekly milestone (day 7)
+    const isWeekMilestone = currentDay === 7;
     
-    // Play notification sound
-    playNotificationSound();
+    // Update currentDay for next time
+    setCurrentDay(prev => prev + 1);
+    
+    // Also update the streakCount in the UI header
+    setStreakCount(currentDay);
+    
+    // Update multiplier based on the day
+    if (isWeekMilestone) {
+      // Weekly milestone reward (higher multiplier)
+      setMultiplier(3.0);
+      // Set nextReward for 2 weeks (day 14) milestone
+      setNextReward('4x');
+      // Play notification sound with higher volume for celebration
+      const celebrationSound = new Audio('/sounds/notification.mp3');
+      celebrationSound.volume = 0.5; // Higher volume for milestone
+      celebrationSound.play();
+      // Show special success toast notification
+      showToast(`🏆 Weekly Milestone Achieved! Your multiplier is now 3.0x`, 'success', 6000);
+    } else {
+      // Regular daily reward
+      setMultiplier(2.0);
+      // Play regular notification sound
+      playNotificationSound();
+      // Show regular success toast notification
+      showToast(`🎉 Daily reward claimed! Your multiplier is now 2.0x`, 'success');
+    }
   };
 
   // Handle wallet connect from DailyLogin
@@ -720,6 +751,9 @@ function DappContent() {
             nextReward={nextReward}
             onClaim={handleDailyClaim}
             onWalletConnect={handleWalletConnect}
+            isWeeklyMilestone={currentDay === 7 || currentDay === 14 || currentDay === 21 || currentDay === 28}
+            startDay={currentDay <= 7 ? 1 : currentDay <= 14 ? 8 : currentDay <= 21 ? 15 : 22}
+            endDay={currentDay <= 7 ? 7 : currentDay <= 14 ? 14 : currentDay <= 21 ? 21 : 28}
           />
         </div>
         
