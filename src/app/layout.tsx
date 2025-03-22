@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThirdwebProvider } from "thirdweb/react";
+import ThirdwebProviderWrapper from './ThirdwebProviderWrapper';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,14 +13,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} bg-gradient`}>
-        <div className="background-gradient"></div>
-        <ThirdwebProvider>{children}</ThirdwebProvider>
+    <html lang="en" className="dark">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
+      <body className={`${inter.className} bg-zinc-900 text-white antialiased overflow-hidden`}>
+        <ThirdwebProviderWrapper>
+          {children}
+        </ThirdwebProviderWrapper>
       </body>
     </html>
   );

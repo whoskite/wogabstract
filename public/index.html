@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World of Garu - NFT Collection</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #0f0f0f;
+      color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      flex-direction: column;
+      text-align: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(to right, #ff2a6d, #05d9e8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    p {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      color: #d2d2d2;
+      margin-bottom: 2rem;
+    }
+    .cta-button {
+      background: linear-gradient(to right, #ff2a6d, #05d9e8);
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 1rem 2rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .cta-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    .nft-image {
+      width: 300px;
+      height: 300px;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 30px rgba(5, 217, 232, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>WORLD OF GARU</h1>
+    <img src="/img/19.GIF" alt="World of Garu NFT" class="nft-image">
+    <p>Enter the metaverse of unique digital collectibles on the Abstract Testnet. Mint your exclusive NFTs now.</p>
+    <button class="cta-button" onclick="window.location.reload()">Launch App</button>
+    <p style="font-size: 0.9rem; margin-top: 2rem;">
+      If you're seeing this page, the Next.js application may be loading or experiencing issues. Click the button above to try reloading.
+    </p>
+  </div>
+</body>
+</html> 

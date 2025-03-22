@@ -1,35 +1,42 @@
-import { ConnectButton } from "thirdweb/react";
-import { client } from "../client";
-import { abstractTestnet } from "thirdweb/chains";
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from 'react';
+import { ConnectButton } from "@/app/components/ui/ConnectButton";
+import { useActiveAccount } from "thirdweb/react";
+import Link from 'next/link';
 
 export function Navbar() {
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent">
-      <div className="absolute inset-0 bg-zinc-900/10 backdrop-blur-md border-b border-white/10"></div>
-      <div className="container relative mx-auto px-4 py-3 flex justify-between items-center">
-        {/* Logo on the left */}
-        <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center mr-2 shadow-glow">
-            <span className="text-white font-bold text-sm">WG</span>
-          </div>
-          <h1 className="text-xl md:text-2xl font-bold text-white">
-            World of Garu
-          </h1>
-        </div>
+  const account = useActiveAccount();
+  const [scrolled, setScrolled] = useState(false);
 
-        {/* Connect Button on the right */}
-        <div className="glassmorphism-button">
-          <ConnectButton
-            client={client}
-            chain={abstractTestnet}
-            appMetadata={{
-              name: "World of Garu",
-              url: "https://worldofgaru.xyz",
-            }}
-          />
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <header className="fixed top-0 left-0 w-full z-50 px-4 pt-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-center items-center bg-black/80 backdrop-blur-xl rounded-xl px-6 py-2 border border-blue-500/20 shadow-lg shadow-blue-500/10 w-full md:w-2/5 mx-auto">
+          {/* Game Logo */}
+          <div className="flex items-center">
+            <Link href="/" className="text-2xl font-bold text-white flex items-center">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 mr-1">WORLD</span>
+              <span className="text-white font-light">OF</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-500 ml-1">GARU</span>
+            </Link>
+          </div>
         </div>
       </div>
-    </nav>
+    </header>
   );
 } 
