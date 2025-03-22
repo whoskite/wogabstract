@@ -1,27 +1,108 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useActiveAccount } from "thirdweb/react";
+import { useActiveAccount, useDisconnect, useConnectModal } from "thirdweb/react";
 import { AppleStyleDock } from '@/components/AppleStyleDock';
-import { Flame, Zap, Volume2, VolumeX, Search, Filter, ArrowLeft } from "lucide-react";
+import { Flame, Zap, Volume2, VolumeX, Search, Filter, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
 import { useSoundEffect, useBackgroundMusic } from "@/lib/useSoundEffect";
 import Image from "next/image";
 import Link from "next/link";
 import { getContract, readContract } from "thirdweb";
-import { client } from "@/app/client";
+import { client } from "../client";
 import { abstractTestnet } from "thirdweb/chains";
 import { NFT_CONTRACT_ADDRESS } from '@/const/contractAddresses';
 import { Navbar } from "../components/Navbar";
 
+// Custom CSS for image error states and toast notifications
+const styles = `
+  /* Image error fallback styles */
+  .image-error::before {
+    content: "🖼️";
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    z-index: 1;
+  }
+  
+  .image-error::after {
+    content: "Image failed";
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: #9ca3af;
+    z-index: 1;
+  }
+
+  /* Toast notification animations */
+  @keyframes slideDown {
+    from {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+  }
+  
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+  }
+  
+  .toast-enter {
+    animation: slideDown 0.3s ease forwards;
+  }
+  
+  .toast-exit {
+    animation: slideUp 0.3s ease forwards;
+  }
+  
+  .toast-notification {
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    animation: pulse 2s infinite;
+    min-width: 280px;
+  }
+`;
+
+// Toast notification type
+type ToastType = 'success' | 'error' | 'info';
+
+// Toast notification interface
+interface Toast {
+  id: string;
+  message: string;
+  type: ToastType;
+  duration: number;
+}
+
 // Categories for filtering
 const CATEGORIES = [
   { id: "all", name: "All Items", icon: "📦" },
-  { id: "collectible", name: "Collectibles", icon: "🖼️" },
-  { id: "consumable", name: "Consumables", icon: "🧪" },
-  { id: "weapon", name: "Weapons", icon: "⚔️" },
-  { id: "armor", name: "Armor", icon: "🛡️" },
-  { id: "key", name: "Key Items", icon: "🔑" },
-  { id: "vehicle", name: "Vehicles", icon: "🚀" }
+  { id: "collectible", name: "Collectibles", icon: "🖼️" }
 ];
 
 // For item type and category determination based on metadata
@@ -101,13 +182,74 @@ function InventoryContent() {
   const { play: playHoverSound } = useSoundEffect('/sounds/hover.mp3'); 
   const { play: playBackSound } = useSoundEffect('/sounds/back.mp3');
   const { play: playCategoryChange } = useSoundEffect('/sounds/category.mp3');
+  const { play: playSuccessSound } = useSoundEffect('/sounds/notification.mp3');
   
   // Background music
   const { isPlaying, setVolume, play: playBgMusic, stop: stopBgMusic } = 
     useBackgroundMusic('/sounds/inventory-ambient.mp3', 0.05);
 
+  // Initialize audio context on user interaction
+  const [audioInitialized, setAudioInitialized] = useState(false);
+  
+  useEffect(() => {
+    if (!audioInitialized) {
+      const initAudio = () => {
+        // Create an AudioContext to unlock audio on all browsers
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContext) {
+          const audioCtx = new AudioContext();
+          // Create and play a silent buffer to unlock the audio
+          const buffer = audioCtx.createBuffer(1, 1, 22050);
+          const source = audioCtx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(audioCtx.destination);
+          source.start(0);
+          
+          console.log("Audio context initialized on user interaction");
+          
+          // Try playing a test sound
+          const testSound = new Audio('/sounds/click.mp3');
+          testSound.volume = 0.2;
+          testSound.play()
+            .then(() => console.log("Test sound played successfully"))
+            .catch(err => console.error("Test sound failed:", err));
+          
+          // Set as initialized and remove event listeners
+          setAudioInitialized(true);
+          ['click', 'touchstart', 'keydown'].forEach(event => {
+            document.removeEventListener(event, initAudio);
+          });
+          
+          // Try to play a sound as a test
+          playSelectSound();
+        }
+      };
+      
+      // Add event listeners for user interaction
+      ['click', 'touchstart', 'keydown'].forEach(event => {
+        document.addEventListener(event, initAudio, { once: true });
+      });
+      
+      console.log("Added user interaction listeners for audio initialization");
+      
+      return () => {
+        ['click', 'touchstart', 'keydown'].forEach(event => {
+          document.removeEventListener(event, initAudio);
+        });
+      };
+    }
+  }, [audioInitialized, playSelectSound]);
+
   // Get active account
   const account = useActiveAccount();
+  const connectModal = useConnectModal();
+  
+  // Log account state for debugging
+  useEffect(() => {
+    console.log("Account state changed:", account ? 
+      `Connected: ${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 
+      "Not connected");
+  }, [account]);
   
   // State for inventory items and UI
   const [inventory, setInventory] = useState<any[]>([]);
@@ -119,6 +261,64 @@ function InventoryContent() {
   const [multiplier, setMultiplier] = useState(1.5);
   const [ownedNFTs, setOwnedNFTs] = useState<any[]>([]);
   const [isLoadingNFTs, setIsLoadingNFTs] = useState(true);
+  const [garuBalance, setGaruBalance] = useState<number>(0);
+  
+  // Toast notifications
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [prevAccount, setPrevAccount] = useState<string | null>(null);
+
+  // Show toast notification
+  function showToast(message: string, type: 'success' | 'error' | 'info' = 'success', duration: number = 4000) {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts(prev => [...prev, { id, message, type, duration }]);
+    
+    // Log toast creation for debugging
+    console.log(`Toast created: ${id} - ${type} - ${message}`);
+    
+    if (type === 'success') {
+      playSuccessSound();
+    } else if (type === 'error') {
+      playSuccessSound(); // Should use error sound if available
+    }
+    
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+      console.log(`Toast removed: ${id}`);
+    }, duration);
+  }
+  
+  // Track wallet connection changes
+  useEffect(() => {
+    // When wallet is connected and it's different from previous state
+    if (account && (!prevAccount || prevAccount !== account.address)) {
+      console.log("Showing wallet connected toast");
+      showToast(`Wallet connected: ${account.address.slice(0, 6)}...${account.address.slice(-4)}`, 'success');
+      setPrevAccount(account.address);
+      
+      // Set GARU balance to 0 for this example
+      setGaruBalance(0);
+    } 
+    // When wallet is disconnected and there was a previous connection
+    else if (!account && prevAccount) {
+      console.log("Showing wallet disconnected toast");
+      showToast(`Wallet disconnected`, 'info');
+      setPrevAccount(null);
+      
+      // Reset GARU balance when disconnected
+      setGaruBalance(0);
+    }
+  }, [account]);
+  
+  // Direct connection button with toast
+  function handleConnectWallet() {
+    playSelectSound();
+    if (!account) {
+      connectModal.connect({
+        client
+      });
+      // We'll let the useEffect handle the toast
+    }
+  }
 
   // Toggle music function
   const toggleMusic = () => {
@@ -341,6 +541,7 @@ function InventoryContent() {
         }
       } catch (err) {
         console.error("Error fetching NFTs:", err);
+        showToast("Failed to load your NFTs. Please try again.", 'error');
         setIsLoadingNFTs(false);
         setIsLoading(false);
       }
@@ -482,6 +683,30 @@ function InventoryContent() {
 
   return (
     <main className="fixed inset-0 flex flex-col bg-zinc-900 overflow-hidden">
+      {/* Apply custom CSS styles */}
+      <style jsx global>{styles}</style>
+
+      {/* Toast notifications container */}
+      <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col gap-2 items-center">
+        {toasts.map(toast => (
+          <div 
+            key={toast.id}
+            className={`toast-enter toast-notification rounded-lg p-3 text-white shadow-lg flex items-center gap-2 max-w-xs
+              ${toast.type === 'success' ? 'bg-green-500/90 border border-green-400' : 
+                toast.type === 'error' ? 'bg-red-500/90 border border-red-400' : 'bg-blue-500/90 border border-blue-400'}`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+            ) : toast.type === 'error' ? (
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            ) : (
+              <div className="h-5 w-5 flex-shrink-0 rounded-full bg-blue-400 flex items-center justify-center text-xs font-bold">i</div>
+            )}
+            <p className="text-sm font-medium">{toast.message}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Floating Top Navigation Bar */}
       <div className="fixed top-0 inset-x-0 z-50 px-4 py-2">
         <div className="bg-black/60 backdrop-blur-md rounded-xl border border-zinc-700 p-2 flex items-center justify-between">
@@ -519,12 +744,25 @@ function InventoryContent() {
               <span className="text-white text-xs font-medium">{multiplier}x</span>
             </div>
             
+            {/* Connect Wallet Button */}
+            <button
+              onClick={handleConnectWallet}
+              className={`
+                py-1.5 px-3 text-sm
+                ${account ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-[#FFC107] hover:bg-[#FFB000] text-black'}
+                font-bold rounded-md transition-all duration-200 
+                flex items-center justify-center
+              `}
+            >
+              {account ? 'Connected' : 'Connect Wallet'}
+            </button>
+            
             {/* User Profile */}
             {account ? (
               <div className="flex items-center gap-2">
                 <div className="text-right hidden md:block">
                   <div className="text-sm text-white/70">{account.address.slice(0, 6)}...{account.address.slice(-4)}</div>
-                  <div className="text-xs text-yellow-400/90 font-medium">0.0017 ETH</div>
+                  <div className="text-xs text-green-400/90 font-medium">{garuBalance > 0 ? `${garuBalance.toFixed(2)} GARU` : "0 GARU"}</div>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-zinc-600 flex items-center justify-center text-xs font-bold border border-zinc-500">
                   {account.address.slice(0, 2)}
@@ -556,10 +794,10 @@ function InventoryContent() {
         </div>
       )}
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 p-4 pt-16 overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 p-4 pt-16 pb-16 overflow-hidden content-start">
         {/* Categories Sidebar */}
         <div className="md:col-span-2 bg-zinc-800/80 backdrop-blur-sm rounded-2xl border border-zinc-700 p-3 overflow-y-auto">
-          <h3 className="text-white font-bold mb-3 px-2">CATEGORIES</h3>
+          <h3 className="text-white font-bold mb-3 px-2">FILTERS</h3>
           <div className="space-y-1">
             {CATEGORIES.map((category) => (
               <button
@@ -577,12 +815,27 @@ function InventoryContent() {
               </button>
             ))}
           </div>
+          
+          {/* Collection Stats */}
+          <div className="mt-6 pt-6 border-t border-zinc-700/50">
+            <h3 className="text-white font-medium text-sm mb-3 px-2">COLLECTION STATS</h3>
+            <div className="space-y-2 px-2">
+              <div className="flex justify-between">
+                <span className="text-zinc-400 text-xs">Total NFTs:</span>
+                <span className="text-white text-xs font-medium">{inventory.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400 text-xs">Floor Price:</span>
+                <span className="text-white text-xs font-medium">0.01 ETH</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Main Inventory Area */}
-        <div className="md:col-span-7 bg-zinc-800/80 backdrop-blur-sm rounded-2xl border border-zinc-700 p-4 overflow-hidden flex flex-col">
+        <div className="md:col-span-7 bg-zinc-800/80 backdrop-blur-sm rounded-2xl border border-zinc-700 p-4 overflow-hidden flex flex-col max-h-[calc(100vh-160px)]">
           {/* Search and Filter */}
-          <div className="flex space-x-2 mb-4">
+          <div className="flex space-x-2 mb-3">
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -602,42 +855,85 @@ function InventoryContent() {
           </div>
 
           {/* Items Grid */}
-          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto p-1">
+          <div className="overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-1 auto-rows-fr content-start">
             {filteredItems.length > 0 ? (
               filteredItems.map((item) => (
                 <div
                   key={item.id}
-                  className={`relative rounded-lg cursor-pointer transition-all hover:scale-105 ${
-                    selectedItem === item.id ? 'ring-2 ring-green-500' : ''
+                  className={`relative rounded-lg cursor-pointer transition-all hover:scale-105 group ${
+                    selectedItem === item.id ? 'ring-2 ring-green-500' : 'border border-zinc-700'
                   }`}
                   onClick={() => handleSelectItem(item.id)}
                   onMouseEnter={() => playHoverSound()}
                 >
-                  <div className="aspect-square relative rounded-md overflow-hidden">
+                  <div className="aspect-square relative rounded-md overflow-hidden bg-zinc-800/80">
                     {item.image ? (
-                      <div className="w-full h-full relative">
+                      <>
                         <Image
                           src={item.image}
                           alt={`NFT #${item.id}`}
                           className="w-full h-full object-cover"
                           width={200}
                           height={200}
+                          unoptimized
+                          onError={(e) => {
+                            console.error(`Failed to load image for NFT #${item.id}:`, item.image);
+                            // Hide the failed image and show fallback
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.parentElement!.classList.add('image-error');
+                            const parent = target.parentElement?.parentElement;
+                            if (parent) {
+                              // Add fallback content
+                              const fallback = document.createElement('div');
+                              fallback.className = 'w-full h-full flex flex-col items-center justify-center p-2';
+                              fallback.innerHTML = `
+                                <div class="text-2xl mb-2">🖼️</div>
+                              `;
+                              parent.appendChild(fallback);
+                            }
+                          }}
                         />
-                        {item.uses && (
-                          <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded-md">
-                            {item.uses}x
+                        <div className="absolute bottom-0 inset-x-0 bg-black/80 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="text-xs font-medium text-white truncate">{item.name}</div>
+                            </div>
+                            {item.uses && (
+                              <div className="bg-zinc-900/70 text-white text-xs px-1.5 py-0.5 rounded-md">
+                                {item.uses}x
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      </>
                     ) : (
-                      <div className="flex items-center justify-center h-full bg-zinc-800">
-                        <span className="text-3xl">?</span>
+                      <div className="w-full h-full flex flex-col items-center justify-center p-2">
+                        <div className="text-2xl mb-2">
+                          {item.category === 'weapon' ? '⚔️' : 
+                           item.category === 'armor' ? '🛡️' : 
+                           item.category === 'consumable' ? '🧪' : 
+                           item.category === 'key' ? '🔑' : 
+                           item.category === 'vehicle' ? '🚀' : '🖼️'}
+                        </div>
+                        <div className="absolute bottom-0 inset-x-0 bg-black/80 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="text-xs font-medium text-white truncate">{item.name}</div>
+                            </div>
+                            {item.uses && (
+                              <div className="bg-zinc-900/70 text-white text-xs px-1.5 py-0.5 rounded-md">
+                                {item.uses}x
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               ))
-            ) : !isLoading ? (
+            ) : !isLoading && !isLoadingNFTs ? (
               <div className="col-span-full flex flex-col items-center justify-center h-64 text-zinc-500">
                 {account ? (
                   <>
@@ -673,12 +969,28 @@ function InventoryContent() {
                   </>
                 )}
               </div>
-            ) : null}
+            ) : (
+              // Show loading placeholders when items are loading but not showing full loading screen
+              <div className="col-span-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {[...Array(8)].map((_, index) => (
+                  <div key={index} className="aspect-square rounded-lg overflow-hidden bg-zinc-800/60 animate-pulse border border-zinc-700/40 group">
+                    <div className="aspect-square w-full h-full relative flex flex-col items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-zinc-700/30 mb-2"></div>
+                      <div className="w-16 h-2.5 bg-zinc-700/30 rounded mb-1"></div>
+                      <div className="w-8 h-2 bg-zinc-700/30 rounded"></div>
+                      <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-full h-3 bg-zinc-700/30 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Details Panel */}
-        <div className="md:col-span-3 bg-zinc-800/80 backdrop-blur-sm rounded-2xl border border-zinc-700 p-4 overflow-y-auto">
+        <div className="md:col-span-3 bg-zinc-800/80 backdrop-blur-sm rounded-2xl border border-zinc-700 p-4 overflow-y-auto max-h-[calc(100vh-160px)]">
           {selectedItem ? (
             (() => {
               const item = inventory.find(i => i.id === selectedItem);
@@ -688,7 +1000,7 @@ function InventoryContent() {
                 <div className="space-y-4">
                   <h2 className="text-xl font-bold text-white">{item.name}</h2>
                   
-                  <div className="aspect-square w-full relative rounded-lg overflow-hidden border border-zinc-700">
+                  <div className="aspect-square w-full relative rounded-t-lg overflow-hidden border border-zinc-700 border-b-0 bg-zinc-800/60">
                     {item.image ? (
                       <Image
                         src={item.image}
@@ -696,15 +1008,62 @@ function InventoryContent() {
                         className="w-full h-full object-contain bg-zinc-900/50"
                         width={400}
                         height={400}
+                        unoptimized
+                        onError={(e) => {
+                          console.error(`Failed to load detail image for NFT #${item.id}:`, item.image);
+                          // Hide the failed image and show fallback
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            // Add fallback content
+                            const fallback = document.createElement('div');
+                            fallback.className = 'w-full h-full flex flex-col items-center justify-center p-4';
+                            fallback.innerHTML = `
+                              <div class="text-6xl mb-4">
+                                ${item.category === 'weapon' ? '⚔️' : 
+                                  item.category === 'armor' ? '🛡️' : 
+                                  item.category === 'consumable' ? '🧪' : 
+                                  item.category === 'key' ? '🔑' : 
+                                  item.category === 'vehicle' ? '🚀' : '🖼️'}
+                              </div>
+                              <div class="text-center">
+                                <div class="text-lg font-medium text-white">${item.name}</div>
+                                <div class="text-sm text-zinc-400 mt-1">Token #${item.id}</div>
+                              </div>
+                              ${item.uses ? `
+                                <div class="mt-3 bg-zinc-700/70 text-white text-sm px-2 py-1 rounded-md">
+                                  ${item.uses} uses remaining
+                                </div>
+                              ` : ''}
+                            `;
+                            parent.appendChild(fallback);
+                          }
+                        }}
                       />
                     ) : (
-                      <div className="flex items-center justify-center h-full bg-zinc-800">
-                        <span className="text-5xl">?</span>
+                      <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                        <div className="text-6xl mb-4">
+                          {item.category === 'weapon' ? '⚔️' : 
+                           item.category === 'armor' ? '🛡️' : 
+                           item.category === 'consumable' ? '🧪' : 
+                           item.category === 'key' ? '🔑' : 
+                           item.category === 'vehicle' ? '🚀' : '🖼️'}
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-medium text-white">{item.name}</div>
+                          <div className="text-sm text-zinc-400 mt-1">Token #{item.id}</div>
+                        </div>
+                        {item.uses && (
+                          <div className="mt-3 bg-zinc-700/70 text-white text-sm px-2 py-1 rounded-md">
+                            {item.uses} uses remaining
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="grid grid-cols-2 gap-2 text-sm border border-zinc-700 border-t-0 bg-zinc-800/30 rounded-b-lg p-3">
                     <div className="bg-zinc-700/50 rounded-lg p-2">
                       <span className="text-zinc-400">Type</span>
                       <div className="text-white font-medium">{item.type}</div>
@@ -721,13 +1080,13 @@ function InventoryContent() {
                     )}
                   </div>
                   
-                  <div className="p-3 bg-zinc-700/50 rounded-lg">
+                  <div className="p-3 bg-zinc-700/50 rounded-lg mt-3">
                     <h3 className="text-white text-sm font-medium mb-1">Description</h3>
                     <p className="text-zinc-300 text-xs">{item.description}</p>
                   </div>
                   
                   {item.attributes.length > 0 && (
-                    <div>
+                    <div className="mt-3">
                       <h3 className="text-white text-sm font-medium mb-2">Attributes</h3>
                       <div className="grid grid-cols-2 gap-2">
                         {item.attributes.map((attr: any, index: number) => {
@@ -743,7 +1102,7 @@ function InventoryContent() {
                     </div>
                   )}
                   
-                  <div className="flex gap-2 pt-4">
+                  <div className="flex gap-2 mt-4">
                     {item.type === 'Consumable' && (
                       <button
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium transition-colors"
@@ -766,8 +1125,23 @@ function InventoryContent() {
             })()
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-zinc-500">
-              <span className="text-3xl mb-2">👈</span>
-              <p className="text-center">Select an item to view details</p>
+              <span className="text-3xl mb-3">👈</span>
+              <p className="text-center mb-2">Select an item to view details</p>
+              <div className="w-36 h-1 bg-zinc-700/30 rounded-full"></div>
+              <div className="mt-6 w-full max-w-xs">
+                <div className="rounded-t-lg bg-zinc-800/40 border border-zinc-700/20 border-b-0 mb-0">
+                  <div className="aspect-square w-full flex flex-col items-center justify-center">
+                    <div className="w-14 h-14 rounded-lg bg-zinc-700/20 mb-3"></div>
+                    <div className="w-24 h-3 bg-zinc-700/20 rounded mb-2"></div>
+                    <div className="w-12 h-2 bg-zinc-700/20 rounded"></div>
+                  </div>
+                </div>
+                <div className="rounded-b-lg border border-zinc-700/20 border-t-0 p-3 bg-zinc-800/20">
+                  <div className="h-4 w-2/3 bg-zinc-800/40 rounded mb-3"></div>
+                  <div className="h-3 w-full bg-zinc-800/40 rounded mb-2"></div>
+                  <div className="h-3 w-5/6 bg-zinc-800/40 rounded"></div>
+                </div>
+              </div>
             </div>
           )}
         </div>

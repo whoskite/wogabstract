@@ -141,4 +141,21 @@ export function NFTCollection({ totalMinted, maxSupply }: NFTCollectionProps) {
                       unoptimized
                     />
                   </div>
-                  <div className="mt-2 flex
+                  <div className="mt-2 flex justify-between items-center">
+                    <span className="off-white-label">{metadata.name}</span>
+                    <span className={`text-xs ${metadata.isMinted ? 'text-green-600' : 'text-gray-400'}`}>
+                      {metadata.isMinted ? 'MINTED' : 'NOT MINTED'}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs opacity-70 truncate">
+                    {metadata.description}
+                  </div>
+                </div>
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+} 

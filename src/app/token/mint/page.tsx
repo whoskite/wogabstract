@@ -262,7 +262,6 @@ export default function MintPage() {
             <button
               onClick={handleMint}
               className="w-full py-4 px-6 bg-gradient-to-r from-neon-pink to-neon-purple rounded-lg font-bold text-lg shadow-glow transition-all hover:shadow-glow-xl hover:opacity-90"
-              onMouseEnter={playHoverSound}
             >
               Mint Now ({nftPrice.toFixed(4)} ETH)
             </button>

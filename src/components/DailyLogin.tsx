@@ -1,6 +1,8 @@
 import React from 'react';
 import Image from 'next/image';
 import useSoundEffect from '@/hooks/useSoundEffect';
+import { useActiveAccount, useConnectModal } from 'thirdweb/react';
+import { client } from '@/app/client';
 
 interface DailyLoginProps {
   streak: number;
@@ -9,6 +11,7 @@ interface DailyLoginProps {
   todayReward: string;
   nextReward: string;
   onClaim: () => void;
+  onWalletConnect?: () => void;
 }
 
 const DailyLogin: React.FC<DailyLoginProps> = ({
@@ -17,7 +20,8 @@ const DailyLogin: React.FC<DailyLoginProps> = ({
   currentDay = 1,
   todayReward = '1.5x',
   nextReward = '2x',
-  onClaim
+  onClaim,
+  onWalletConnect
 }) => {
   const MAX_DAYS = 7;
   const days = Array.from({ length: MAX_DAYS }, (_, i) => i + 1);
@@ -26,11 +30,27 @@ const DailyLogin: React.FC<DailyLoginProps> = ({
   const { play: playClickSound } = useSoundEffect('/sounds/click.mp3');
   const { play: playHoverSound } = useSoundEffect('/sounds/hover.mp3');
   
+  // Get wallet connection status
+  const account = useActiveAccount();
+  const connectModal = useConnectModal();
+  
   const isClaimed = claimedDays.includes(currentDay);
+  const isWalletConnected = !!account;
   
   const handleClaim = () => {
-    if (!isClaimed) {
-      playClickSound();
+    playClickSound();
+    
+    if (!isWalletConnected) {
+      // Connect wallet if not connected
+      connectModal.connect({
+        client
+      });
+      // Notify parent component that we're trying to connect
+      if (onWalletConnect) {
+        onWalletConnect();
+      }
+    } else if (!isClaimed) {
+      // Claim if connected and not already claimed
       onClaim();
     }
   };
@@ -92,24 +112,38 @@ const DailyLogin: React.FC<DailyLoginProps> = ({
       {/* Claim Button */}
       <button
         onClick={handleClaim}
-        onMouseEnter={!isClaimed ? playHoverSound : undefined}
-        disabled={isClaimed}
+        disabled={isClaimed && isWalletConnected}
         className={`
           w-full py-2 px-4 rounded-md font-bold text-sm uppercase tracking-wider
           relative overflow-hidden
-          ${isClaimed 
+          ${isClaimed && isWalletConnected
             ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' 
-            : 'bg-gradient-to-r from-neon-blue to-neon-pink text-white hover:shadow-neon-pink transition-all duration-300'}
+            : !isWalletConnected
+              ? 'bg-[#FFC107] hover:bg-[#FFB000] text-black'
+              : 'bg-gradient-to-r from-neon-blue to-neon-pink text-white hover:shadow-neon-pink transition-all duration-300'}
         `}
       >
-        {!isClaimed && (
+        {!isClaimed && isWalletConnected && (
           <span className="absolute inset-0 w-full h-full bg-white/20 animate-shine" />
         )}
-        {isClaimed ? 'CLAIMED' : 'CLAIM REWARD'}
+        {isClaimed && isWalletConnected
+          ? 'CLAIMED' 
+          : !isWalletConnected 
+            ? 'CONNECT WALLET' 
+            : 'CLAIM REWARD'}
       </button>
       
       {/* Next Reward */}
       <div className="mt-3 text-center">
         <p className="text-xs text-zinc-400">Next reward: <span className="text-neon-pink">{nextReward}</span></p>
       </div>
-     
+      
+      {/* Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-blue to-neon-pink"></div>
+      <div className="absolute -top-12 -right-12 w-24 h-24 bg-neon-blue/20 rounded-full blur-xl"></div>
+      <div className="absolute -bottom-8 -left-8 w-16 h-16 bg-neon-pink/20 rounded-full blur-xl"></div>
+    </div>
+  );
+};
+
+export default DailyLogin; 

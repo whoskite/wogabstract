@@ -118,6 +118,7 @@ export function AppleStyleDock() {
   
   // Add sound effects
   const { play: playClickSound } = useSoundEffect('/sounds/click.mp3');
+  const { play: playHoverSound } = useSoundEffect('/sounds/hover.mp3');
   
   // Spring configuration
   const spring = { mass: 0.1, stiffness: 150, damping: 12 };
@@ -167,6 +168,7 @@ export function AppleStyleDock() {
                       app.onClick();
                     }
                   }}
+                  onMouseEnter={() => playHoverSound()}
                 >
                   <DockIcon>
                     <app.icon className="text-white group-hover:text-zinc-300 transition-colors" />
@@ -193,6 +195,7 @@ function DockItem({
   const ref = useRef<HTMLDivElement>(null);
   const { mouseX, distance, magnification, spring } = useDock();
   const isHovered = useMotionValue(0);
+  const { play: playHoverSound } = useSoundEffect('/sounds/hover.mp3');
 
   const mouseDistance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -212,7 +215,10 @@ function DockItem({
       ref={ref} 
       style={{ width }}
       className="relative flex items-center justify-center cursor-pointer"
-      onHoverStart={() => isHovered.set(1)}
+      onHoverStart={() => {
+        isHovered.set(1);
+        playHoverSound();
+      }}
       onHoverEnd={() => isHovered.set(0)}
       whileHover={{ scale: 1.1 }}
       transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -274,4 +280,12 @@ function DockLabel({
           initial={{ opacity: 0, y: 0 }}
           animate={{ opacity: 1, y: -10 }}
           exit={{ opacity: 0, y: 0 }}
-          transition={{ dur
+          transition={{ duration: 0.2 }}
+          className="absolute -top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap rounded-md bg-zinc-800 px-2 py-1 text-xs text-white"
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+} 

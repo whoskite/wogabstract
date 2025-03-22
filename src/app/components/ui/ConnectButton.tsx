@@ -29,4 +29,19 @@ export function ConnectButton({ size = 'default' }: ConnectButtonProps) {
     }
     
     // Use the connect method with client parameter
-    connectMo
+    connectModal.connect({
+      client: client
+    });
+  };
+  
+  return (
+    <div className={`relative ${isCompact ? 'scale-90' : ''}`}>
+      <ConnectWalletButton
+        onClick={handleConnect}
+        isConnected={!!account}
+        isCompact={isCompact}
+        onMouseEnter={playHoverSound}
+      />
+    </div>
+  );
+} 

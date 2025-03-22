@@ -73,16 +73,33 @@ export const useSoundEffect = (
         audioRef.current.currentTime = 0;
       }
       
+      console.log(`Attempting to play sound: ${soundPath}`);
+      
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
             setIsPlaying(true);
+            console.log(`Sound playing successfully: ${soundPath}`);
           })
           .catch(error => {
-            console.warn('Play was prevented by browser:', error);
+            console.error(`Play was prevented by browser for ${soundPath}:`, error);
+            
+            // Try again with user interaction hack
+            const resumeAudio = () => {
+              audioRef.current?.play()
+                .then(() => {
+                  console.log(`Sound played after user interaction: ${soundPath}`);
+                  document.removeEventListener('click', resumeAudio);
+                })
+                .catch(err => console.error(`Still failed after interaction: ${soundPath}`, err));
+            };
+            
+            document.addEventListener('click', resumeAudio, { once: true });
           });
       }
+    } else {
+      console.error(`Audio reference not available for: ${soundPath}`);
     }
   };
 

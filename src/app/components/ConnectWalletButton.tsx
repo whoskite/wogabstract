@@ -26,4 +26,7 @@ export function ConnectWalletButton({
         flex items-center justify-center whitespace-nowrap
       `}
     >
-  
+      {isConnected ? 'Wallet Connected' : 'Connect Wallet'}
+    </button>
+  );
+} 
