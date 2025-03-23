@@ -133,6 +133,7 @@ const GMChatWindow = forwardRef<any, GMChatWindowProps>(({
     setMessages(prevMessages => 
       prevMessages.map(message => {
         if (message.id === messageId) {
+          // Ensure reactions object exists
           const updatedReactions = message.reactions ? { ...message.reactions } : {};
           
           // If this emoji reaction already exists
@@ -183,6 +184,16 @@ const GMChatWindow = forwardRef<any, GMChatWindowProps>(({
     
     // Close emoji picker after selecting
     setShowEmojiPicker(null);
+  };
+
+  // Add reaction to system message (daily claim)
+  const handleSystemReaction = (messageId: string, emoji: string) => {
+    if (!currentUserAddress) return;
+    
+    if (onHoverSound) onHoverSound();
+    
+    // Just call the main reaction handler
+    handleReaction(messageId, emoji);
   };
 
   // Toggle emoji picker for a specific message
@@ -298,6 +309,91 @@ const GMChatWindow = forwardRef<any, GMChatWindowProps>(({
                     </div>
                   )}
                   
+                  {/* Display reactions for system messages */}
+                  {message.isSystem && message.reactions && Object.keys(message.reactions).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1 justify-center">
+                      {Object.values(message.reactions).map(reaction => (
+                        <button
+                          key={reaction.emoji}
+                          onClick={() => handleReaction(message.id, reaction.emoji)}
+                          onMouseEnter={onHoverSound}
+                          className={`text-xs rounded-full px-1.5 py-0.5 flex items-center gap-1 transition-colors ${
+                            currentUserAddress && reaction.users.includes(currentUserAddress)
+                              ? 'bg-zinc-600/80 hover:bg-zinc-600' 
+                              : 'bg-zinc-800/60 hover:bg-zinc-700/60'
+                          }`}
+                          title={`${reaction.users.length} reaction${reaction.users.length !== 1 ? 's' : ''}: ${
+                            currentUserAddress && reaction.users.includes(currentUserAddress) 
+                              ? 'Click to remove your reaction' 
+                              : 'Click to add your reaction'
+                          }`}
+                        >
+                          <span>{reaction.emoji}</span>
+                          <span className="text-zinc-300">{reaction.count}</span>
+                        </button>
+                      ))}
+                      
+                      {/* Add reaction button */}
+                      <button 
+                        onClick={(e) => toggleEmojiPicker(e, message.id)}
+                        onMouseEnter={onHoverSound}
+                        className="text-xs bg-zinc-800/60 hover:bg-zinc-700/60 rounded-full px-1.5 py-0.5 text-zinc-400"
+                        title="Add a reaction"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Display reactions for regular messages */}
+                  {!message.isSystem && message.reactions && Object.keys(message.reactions).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {Object.values(message.reactions).map(reaction => (
+                        <button
+                          key={reaction.emoji}
+                          onClick={() => handleReaction(message.id, reaction.emoji)}
+                          onMouseEnter={onHoverSound}
+                          className={`text-xs rounded-full px-1.5 py-0.5 flex items-center gap-1 transition-colors ${
+                            currentUserAddress && reaction.users.includes(currentUserAddress)
+                              ? 'bg-zinc-600/80 hover:bg-zinc-600' 
+                              : 'bg-zinc-800/60 hover:bg-zinc-700/60'
+                          }`}
+                          title={`${reaction.users.length} reaction${reaction.users.length !== 1 ? 's' : ''}: ${
+                            currentUserAddress && reaction.users.includes(currentUserAddress) 
+                              ? 'Click to remove your reaction' 
+                              : 'Click to add your reaction'
+                          }`}
+                        >
+                          <span>{reaction.emoji}</span>
+                          <span className="text-zinc-300">{reaction.count}</span>
+                        </button>
+                      ))}
+                      
+                      {/* Add reaction button */}
+                      <button 
+                        onClick={(e) => toggleEmojiPicker(e, message.id)}
+                        onMouseEnter={onHoverSound}
+                        className="text-xs bg-zinc-800/60 hover:bg-zinc-700/60 rounded-full px-1.5 py-0.5 text-zinc-400"
+                        title="Add a reaction"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Add first reaction if none exist (regular messages only) */}
+                  {(!message.reactions || Object.keys(message.reactions).length === 0) && !message.isSystem && (
+                    <div className="flex mt-1 justify-end">
+                      <button 
+                        onClick={(e) => toggleEmojiPicker(e, message.id)}
+                        onMouseEnter={onHoverSound}
+                        className="text-xs bg-zinc-800/60 hover:bg-zinc-700/60 rounded-full px-1.5 py-0.5 text-zinc-400 flex items-center"
+                      >
+                        <Plus size={10} className="mr-0.5" /> React
+                      </button>
+                    </div>
+                  )}
+                  
                   {/* Emoji Picker */}
                   {showEmojiPicker === message.id && (
                     <div 
@@ -314,50 +410,6 @@ const GMChatWindow = forwardRef<any, GMChatWindowProps>(({
                           {emoji}
                         </button>
                       ))}
-                    </div>
-                  )}
-                  
-                  {/* Display reactions */}
-                  {message.reactions && Object.keys(message.reactions).length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {Object.values(message.reactions).map(reaction => (
-                        <button
-                          key={reaction.emoji}
-                          onClick={() => handleReaction(message.id, reaction.emoji)}
-                          onMouseEnter={onHoverSound}
-                          className={`text-xs rounded-full px-1.5 py-0.5 flex items-center gap-1 transition-colors ${
-                            currentUserAddress && reaction.users.includes(currentUserAddress)
-                              ? 'bg-zinc-600/80 hover:bg-zinc-600' 
-                              : 'bg-zinc-800/60 hover:bg-zinc-700/60'
-                          }`}
-                          title={`${reaction.users.length} reaction${reaction.users.length !== 1 ? 's' : ''}`}
-                        >
-                          <span>{reaction.emoji}</span>
-                          <span className="text-zinc-300">{reaction.count}</span>
-                        </button>
-                      ))}
-                      
-                      {/* Add reaction button */}
-                      <button 
-                        onClick={(e) => toggleEmojiPicker(e, message.id)}
-                        onMouseEnter={onHoverSound}
-                        className="text-xs bg-zinc-800/60 hover:bg-zinc-700/60 rounded-full px-1.5 py-0.5 text-zinc-400"
-                      >
-                        <Plus size={12} />
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* Add first reaction if none exist */}
-                  {(!message.reactions || Object.keys(message.reactions).length === 0) && !message.isSystem && (
-                    <div className="flex mt-1 justify-end">
-                      <button 
-                        onClick={(e) => toggleEmojiPicker(e, message.id)}
-                        onMouseEnter={onHoverSound}
-                        className="text-xs bg-zinc-800/60 hover:bg-zinc-700/60 rounded-full px-1.5 py-0.5 text-zinc-400 flex items-center"
-                      >
-                        <Plus size={10} className="mr-0.5" /> React
-                      </button>
                     </div>
                   )}
                 </div>
