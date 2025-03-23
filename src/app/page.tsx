@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Navbar } from "./components/Navbar";
 import { useActiveAccount, useActiveWallet, useDisconnect, ThirdwebProvider } from "thirdweb/react";
 import { abstractTestnet } from "thirdweb/chains";
@@ -23,6 +23,11 @@ import useSuccessSound from '../hooks/useSuccessSound';
 import useErrorSound from '../hooks/useErrorSound';
 import DailyLogin from '@/components/DailyLogin';
 import LatestNews from '@/components/LatestNews';
+import GMChatWindow from '@/components/GMChatWindow';
+import { Inter } from "next/font/google";
+
+// Initialize Inter font
+const inter = Inter({ subsets: ["latin"] });
 
 // Custom CSS for toast notifications
 const styles = `
@@ -162,7 +167,7 @@ function DappContent() {
   const [streakCount, setStreakCount] = useState(2);
   const [multiplier, setMultiplier] = useState(1.5);
   // Add page loading state
-  const [isPageLoading, setIsPageLoading] = useState(false);  // Start as false
+  const [isPageLoading, setIsPageLoading] = useState(true);  // Start as true instead of false
   // Add transaction overlay states
   const [showTxOverlay, setShowTxOverlay] = useState(false);
   // Add state variables for minted token tracking
@@ -597,6 +602,9 @@ function DappContent() {
     }
   };
 
+  // Add state for GM chat message reference
+  const gmChatRef = useRef<any>(null);
+  
   // Add function to handle daily claim
   const handleDailyClaim = () => {
     // Update claimed days first
@@ -626,6 +634,11 @@ function DappContent() {
       celebrationSound.play();
       // Show special success toast notification
       showToast(`🏆 Weekly Milestone Achieved! Your multiplier is now 3.0x`, 'success', 6000);
+      
+      // Add claim notification to GM chat if reference exists
+      if (gmChatRef.current && account) {
+        gmChatRef.current.addSystemMessage(`🏆 ${account.address.slice(0, 6)}...${account.address.slice(-4)} just reached a weekly milestone! ${currentDay} day streak with 3.0x multiplier!`);
+      }
     } else {
       // Regular daily reward
       setMultiplier(2.0);
@@ -633,6 +646,11 @@ function DappContent() {
       playNotificationSound();
       // Show regular success toast notification
       showToast(`🎉 Daily reward claimed! Your multiplier is now 2.0x`, 'success');
+      
+      // Add claim notification to GM chat if reference exists
+      if (gmChatRef.current && account) {
+        gmChatRef.current.addSystemMessage(`🎉 ${account.address.slice(0, 6)}...${account.address.slice(-4)} claimed their daily reward! ${currentDay} day streak!`);
+      }
     }
   };
 
@@ -642,218 +660,250 @@ function DappContent() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-900 text-white overflow-x-hidden">
-      <style jsx global>{`body { background-color: rgb(24 24 27); }`}</style>
+    <div className={`min-h-screen antialiased ${inter.className} ${isGlitching ? 'glitching' : ''}`}>
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
       
-      {/* Global toast styles */}
-      <style jsx global>{styles}</style>
-      
-      {/* Toast notifications container */}
-      <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col gap-2 items-center">
-        {toasts.map(toast => (
-          <div 
-            key={toast.id}
-            className={`toast-enter toast-notification rounded-lg p-3 text-white shadow-lg flex items-center gap-2 max-w-xs
-              ${toast.type === 'success' ? 'bg-green-500/90 border border-green-400' : 
-                toast.type === 'error' ? 'bg-red-500/90 border border-red-400' : 'bg-blue-500/90 border border-blue-400'}`}
-          >
-            {toast.type === 'success' ? (
-              <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
-            ) : toast.type === 'error' ? (
-              <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            ) : (
-              <div className="h-5 w-5 flex-shrink-0 rounded-full bg-blue-400 flex items-center justify-center text-xs font-bold">i</div>
-            )}
-            <p className="text-sm font-medium">{toast.message}</p>
-          </div>
-        ))}
-      </div>
-      
-      {/* Header Navigation */}
-      <div className="flex min-h-screen flex-col bg-darker-bg text-white overflow-hidden relative">
-        {/* Background effects */}
-        <div className="background-gradient"></div>
-        <div className="background-grid"></div>
-        <div className="noise-overlay"></div>
-        
-        {/* Floating Top Navigation Bar */}
-        <div className="fixed top-0 inset-x-0 z-50 px-4 py-2">
-          <div className="bg-black/60 backdrop-blur-md rounded-xl border border-zinc-700 p-2 flex items-center justify-between">
-            <div className="flex items-center">
-              <h2 className="font-bold text-white text-lg">WORLD OF GARU</h2>
+      {/* Loading animation overlay */}
+      {isPageLoading && (
+        <div className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center">
+          <div className="w-24 h-24 mb-6 relative">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-16 h-16 border-4 border-t-yellow-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              {/* Music Control */}
-              <button 
-                onClick={toggleMusic}
-                className="flex items-center bg-zinc-800/80 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-700/80"
-                title={isPlaying ? "Mute Music" : "Play Music"}
-                onMouseEnter={playHoverSound}
-              >
-                {isPlaying ? (
-                  <Volume2 className="h-4 w-4 text-green-500" />
-                ) : (
-                  <VolumeX className="h-4 w-4 text-zinc-400" />
-                )}
-              </button>
-              
-              {/* Streak Counter */}
-              <div className="flex items-center bg-zinc-800/80 rounded-lg px-2 py-1">
-                <Flame className="h-4 w-4 text-orange-500 mr-1" />
-                <span className="text-white text-xs font-medium">{streakCount} day streak</span>
-              </div>
-              
-              {/* Multiplier with Token Balance */}
-              <div className="flex items-center bg-zinc-800/80 rounded-lg px-2 py-1">
-                <Zap className="h-4 w-4 text-yellow-400 mr-1" />
-                <span className="text-white text-xs font-medium">{multiplier}x</span>
-                {tokenBalance !== null && (
-                  <span className="ml-2 text-xs font-medium bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-md">
-                    {tokenBalance.toFixed(2)} GARU
-                  </span>
-                )}
-              </div>
-              
-              {/* User Profile */}
-              {account ? (
-                <div className="flex items-center gap-2">
-                  <div className="text-right hidden md:block">
-                    <div className="text-sm text-white/70">{account.address.slice(0, 6)}...{account.address.slice(-4)}</div>
-                    <div className="text-xs text-yellow-400/90 font-medium">0.0017 ETH</div>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-zinc-600 flex items-center justify-center text-xs font-bold border border-zinc-500">
-                    {account.address.slice(0, 2)}
-                  </div>
-                  {/* Sign Out Button */}
-                  <button 
-                    onClick={handleDisconnect} 
-                    className="md:ml-1 p-1.5 bg-zinc-700 hover:bg-zinc-600 rounded-full transition-colors group"
-                    title="Sign Out"
-                  >
-                    <LogOut className="w-4 h-4 text-red-500 group-hover:text-red-400" />
-                  </button>
-                </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-3xl">🎨</div>
+            </div>
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">LOADING GALLERY</h2>
+          <p className="text-zinc-400 text-sm">Preparing your abstract experience...</p>
+          <div className="mt-4 w-48 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 animate-loading-progress"></div>
+          </div>
+        </div>
+      )}
+      
+      <div className="relative z-10">
+        {/* Global toast styles */}
+        <style jsx global>{styles}</style>
+        
+        {/* Toast notifications container */}
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col gap-2 items-center">
+          {toasts.map(toast => (
+            <div 
+              key={toast.id}
+              className={`toast-enter toast-notification rounded-lg p-3 text-white shadow-lg flex items-center gap-2 max-w-xs
+                ${toast.type === 'success' ? 'bg-green-500/90 border border-green-400' : 
+                  toast.type === 'error' ? 'bg-red-500/90 border border-red-400' : 'bg-blue-500/90 border border-blue-400'}`}
+            >
+              {toast.type === 'success' ? (
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+              ) : toast.type === 'error' ? (
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
               ) : (
-                <ConnectButton />
+                <div className="h-5 w-5 flex-shrink-0 rounded-full bg-blue-400 flex items-center justify-center text-xs font-bold">i</div>
               )}
+              <p className="text-sm font-medium">{toast.message}</p>
             </div>
-          </div>
+          ))}
         </div>
         
-        {/* Daily Login - Positioned below the navigation bar */}
-        <div className="fixed top-20 right-4 z-30 animate-fade-in w-72">
-          <DailyLogin 
-            streak={streak}
-            claimedDays={claimedDays}
-            currentDay={currentDay}
-            todayReward={todayReward}
-            nextReward={nextReward}
-            onClaim={handleDailyClaim}
-            onWalletConnect={handleWalletConnect}
-            isWeeklyMilestone={currentDay === 7 || currentDay === 14 || currentDay === 21 || currentDay === 28}
-            startDay={currentDay <= 7 ? 1 : currentDay <= 14 ? 8 : currentDay <= 21 ? 15 : 22}
-            endDay={currentDay <= 7 ? 7 : currentDay <= 14 ? 14 : currentDay <= 21 ? 21 : 28}
-          />
-        </div>
-        
-        {/* Latest News - Positioned top left below navigation */}
-        <div className="fixed top-20 left-4 z-30 animate-fade-in w-72">
-          <LatestNews maxArticles={2} />
-        </div>
-
-        {/* Main content */}
-        <main className="flex-1 flex flex-col pt-24 pb-16">
-          {/* Main Content */}
-          <div className="w-full max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-1 gap-8">
-            {/* Large NFT Display (full width) */}
-            <div>
-              <div className="relative overflow-hidden rounded-xl border-2 border-neon-pink">
-                {/* Featured NFT Image */}
-                <div className="relative aspect-[16/9]">
-                  <Image 
-                    src={nftImageUrl || "/img/19.GIF"}
-                    alt="World of Garu Collection" 
-                    fill
-                    className={`object-cover ${isGlitching ? 'glitch-effect' : ''}`}
-                    priority
-                  />
+        {/* Header Navigation */}
+        <div className="flex min-h-screen flex-col bg-darker-bg text-white overflow-hidden relative">
+          {/* Background effects */}
+          <div className="background-gradient"></div>
+          <div className="background-grid"></div>
+          <div className="noise-overlay"></div>
+          
+          {/* Floating Top Navigation Bar */}
+          <div className="fixed top-0 inset-x-0 z-50 px-4 py-2">
+            <div className="bg-black/60 backdrop-blur-md rounded-xl border border-zinc-700 p-2 flex items-center justify-between">
+              <div className="flex items-center">
+                <h2 className="font-bold text-white text-lg">WORLD OF GARU</h2>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                {/* Music Control */}
+                <button 
+                  onClick={toggleMusic}
+                  className="flex items-center bg-zinc-800/80 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-700/80"
+                  title={isPlaying ? "Mute Music" : "Play Music"}
+                  onMouseEnter={playHoverSound}
+                >
+                  {isPlaying ? (
+                    <Volume2 className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <VolumeX className="h-4 w-4 text-zinc-400" />
+                  )}
+                </button>
+                
+                {/* Streak Counter */}
+                <div className="flex items-center bg-zinc-800/80 rounded-lg px-2 py-1">
+                  <Flame className="h-4 w-4 text-orange-500 mr-1" />
+                  <span className="text-white text-xs font-medium">{streakCount} day streak</span>
                 </div>
-
-                {/* Overlay Content */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col items-center justify-center p-6 md:p-8 text-center">
-                  <div>
-                    <h2 className="text-4xl md:text-5xl font-bold mb-3 text-white">World of Garu Collection</h2>
-                    <p className="text-zinc-300 mb-8 max-w-2xl mx-auto">
-                      Each NFT is a unique digital collectible in the World of Garu universe. Own a piece
-                      of this exclusive collection on Abstract Testnet.
-                    </p>
-                    
-                    {/* Stats displayed in a row */}
-                    <div className="flex items-center justify-center gap-16 mb-8">
-                      <div>
-                        <div className="text-zinc-400 text-sm">Minted</div>
-                        <div className="text-white font-bold text-xl">{totalMinted}/{maxSupply}</div>
-                      </div>
-                      <div>
-                        <div className="text-zinc-400 text-sm">Price</div>
-                        <div className="text-white font-bold text-xl">0.0001 ETH</div>
-                      </div>
-                      <div>
-                        <div className="text-zinc-400 text-sm">Rewards</div>
-                        <div className="text-white font-bold text-xl">3/10</div>
-                      </div>
+                
+                {/* Multiplier with Token Balance */}
+                <div className="flex items-center bg-zinc-800/80 rounded-lg px-2 py-1">
+                  <Zap className="h-4 w-4 text-yellow-400 mr-1" />
+                  <span className="text-white text-xs font-medium">{multiplier}x</span>
+                  {tokenBalance !== null && (
+                    <span className="ml-2 text-xs font-medium bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-md">
+                      {tokenBalance.toFixed(2)} GARU
+                    </span>
+                  )}
+                </div>
+                
+                {/* User Profile */}
+                {account ? (
+                  <div className="flex items-center gap-2">
+                    <div className="text-right hidden md:block">
+                      <div className="text-sm text-white/70">{account.address.slice(0, 6)}...{account.address.slice(-4)}</div>
+                      <div className="text-xs text-yellow-400/90 font-medium">0.0017 ETH</div>
                     </div>
-                    
-                    {/* Mint Now Button */}
-                    <button
-                      onClick={() => {
-                        playSelectSound();
-                        window.location.href = '/token/mint';
-                      }} 
-                      className="bg-neon-pink px-10 py-4 rounded-lg text-white font-bold text-lg hover:opacity-90 inline-flex items-center"
+                    <div className="w-8 h-8 rounded-full bg-zinc-600 flex items-center justify-center text-xs font-bold border border-zinc-500">
+                      {account.address.slice(0, 2)}
+                    </div>
+                    {/* Sign Out Button */}
+                    <button 
+                      onClick={handleDisconnect} 
+                      className="md:ml-1 p-1.5 bg-zinc-700 hover:bg-zinc-600 rounded-full transition-colors group"
+                      title="Sign Out"
                     >
-                      MINT NOW <span className="ml-2">→</span>
+                      <LogOut className="w-4 h-4 text-red-500 group-hover:text-red-400" />
                     </button>
                   </div>
-                </div>
+                ) : (
+                  <ConnectButton />
+                )}
               </div>
             </div>
           </div>
-        </main>
-        
-        {/* Bottom Navigation Dock */}
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-30">
-          <AppleStyleDock />
-        </div>
-        
-        {/* Music Control - Mobile only */}
-        <button 
-          onClick={toggleMusic}
-          className="md:hidden fixed bottom-6 right-6 z-30 flex items-center justify-center w-10 h-10 bg-black/60 rounded-full border border-zinc-700 transition-colors hover:bg-black/80"
-          title={isPlaying ? "Mute Music" : "Play Music"}
-          onMouseEnter={playHoverSound}
-        >
-          {isPlaying ? (
-            <Volume2 className="h-5 w-5 text-neon-blue" />
-          ) : (
-            <VolumeX className="h-5 w-5 text-zinc-400" />
-          )}
-        </button>
+          
+          {/* Daily Login - Positioned below the navigation bar */}
+          <div className="fixed top-20 right-4 z-30 animate-fade-in w-72">
+            <DailyLogin 
+              streak={streak}
+              claimedDays={claimedDays}
+              currentDay={currentDay}
+              todayReward={todayReward}
+              nextReward={nextReward}
+              onClaim={handleDailyClaim}
+              onWalletConnect={handleWalletConnect}
+              isWeeklyMilestone={currentDay === 7 || currentDay === 14 || currentDay === 21 || currentDay === 28}
+              startDay={currentDay <= 7 ? 1 : currentDay <= 14 ? 8 : currentDay <= 21 ? 15 : 22}
+              endDay={currentDay <= 7 ? 7 : currentDay <= 14 ? 14 : currentDay <= 21 ? 21 : 28}
+            />
+          </div>
+          
+          {/* GM Chat Window - Positioned below daily login */}
+          <div className="fixed bottom-24 right-4 z-30 animate-fade-in">
+            <GMChatWindow 
+              currentUserAddress={account?.address}
+              onSendSound={playSelectSound}
+              onHoverSound={playHoverSound}
+              ref={gmChatRef}
+            />
+          </div>
+          
+          {/* Latest News - Positioned top left below navigation */}
+          <div className="fixed top-20 left-4 z-30 animate-fade-in w-72">
+            <LatestNews maxArticles={2} />
+          </div>
 
-        {/* Transaction Modal */}
-        {showTxModal && (
-          <TransactionModal
-            status={txStatus}
-            message={txMessage}
-            txHash={txHash}
-            error={error}
-            onClose={() => setShowTxModal(false)}
-            visible={showTxModal}
-            tokenId={mintedTokenId}
-            imageUrl={mintedTokenImageUrl || nftImageUrl}
-          />
-        )}
+          {/* Main content */}
+          <main className="flex-1 flex flex-col pt-24 pb-16">
+            {/* Main Content */}
+            <div className="w-full max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-1 gap-8">
+              {/* Large NFT Display (full width) */}
+              <div>
+                <div className="relative overflow-hidden rounded-xl border-2 border-neon-pink">
+                  {/* Featured NFT Image */}
+                  <div className="relative aspect-[16/9]">
+                    <Image 
+                      src={nftImageUrl || "/img/19.GIF"}
+                      alt="World of Garu Collection" 
+                      fill
+                      className={`object-cover ${isGlitching ? 'glitch-effect' : ''}`}
+                      priority
+                    />
+                  </div>
+
+                  {/* Overlay Content */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col items-center justify-center p-6 md:p-8 text-center">
+                    <div>
+                      <h2 className="text-4xl md:text-5xl font-bold mb-3 text-white">World of Garu Collection</h2>
+                      <p className="text-zinc-300 mb-8 max-w-2xl mx-auto">
+                        Each NFT is a unique digital collectible in the World of Garu universe. Own a piece
+                        of this exclusive collection on Abstract Testnet.
+                      </p>
+                      
+                      {/* Stats displayed in a row */}
+                      <div className="flex items-center justify-center gap-16 mb-8">
+                        <div>
+                          <div className="text-zinc-400 text-sm">Minted</div>
+                          <div className="text-white font-bold text-xl">{totalMinted}/{maxSupply}</div>
+                        </div>
+                        <div>
+                          <div className="text-zinc-400 text-sm">Price</div>
+                          <div className="text-white font-bold text-xl">0.0001 ETH</div>
+                        </div>
+                        <div>
+                          <div className="text-zinc-400 text-sm">Rewards</div>
+                          <div className="text-white font-bold text-xl">3/10</div>
+                        </div>
+                      </div>
+                      
+                      {/* Mint Now Button */}
+                      <button
+                        onClick={() => {
+                          playSelectSound();
+                          window.location.href = '/token/mint';
+                        }} 
+                        onMouseEnter={playHoverSound}
+                        className="bg-neon-pink px-10 py-4 rounded-lg text-white font-bold text-lg hover:opacity-90 inline-flex items-center"
+                      >
+                        MINT NOW <span className="ml-2">→</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+          
+          {/* Bottom Navigation Dock */}
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-30">
+            <AppleStyleDock />
+          </div>
+          
+          {/* Music Control - Mobile only */}
+          <button 
+            onClick={toggleMusic}
+            className="md:hidden fixed bottom-6 right-6 z-30 flex items-center justify-center w-10 h-10 bg-black/60 rounded-full border border-zinc-700 transition-colors hover:bg-black/80"
+            title={isPlaying ? "Mute Music" : "Play Music"}
+            onMouseEnter={playHoverSound}
+          >
+            {isPlaying ? (
+              <Volume2 className="h-5 w-5 text-neon-blue" />
+            ) : (
+              <VolumeX className="h-5 w-5 text-zinc-400" />
+            )}
+          </button>
+
+          {/* Transaction Modal */}
+          {showTxModal && (
+            <TransactionModal
+              status={txStatus}
+              message={txMessage}
+              txHash={txHash}
+              error={error}
+              onClose={() => setShowTxModal(false)}
+              visible={showTxModal}
+              tokenId={mintedTokenId}
+              imageUrl={mintedTokenImageUrl || nftImageUrl}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
