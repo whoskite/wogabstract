@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Loading Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .debug-panel {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .image-test {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .image-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .image-container {
+            position: relative;
+            height: 200px;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .image-info {
+            padding: 10px;
+        }
+        .status {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        .logs {
+            height: 200px;
+            overflow: auto;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-panel">
+        <h1>Image Loading Debug</h1>
+        <p>This page tests the loading of the background images to ensure they're accessible.</p>
+        
+        <div class="logs" id="logs"></div>
+        
+        <button id="testDirectPaths" style="margin-top: 10px; padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Test Direct Paths
+        </button>
+        <button id="testEncodedPaths" style="margin-top: 10px; margin-left: 10px; padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Test URL-Encoded Paths
+        </button>
+    </div>
+
+    <div class="debug-panel">
+        <h2>Image Tests</h2>
+        <p>Each image is loaded via different methods to debug any loading issues:</p>
+        
+        <div class="image-test" id="imageTest"></div>
+    </div>
+
+    <script>
+        const log = (message) => {
+            const logs = document.getElementById('logs');
+            logs.innerHTML += `<div>${new Date().toISOString().substring(11, 19)} - ${message}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+        };
+
+        const testImage = (path, description, container) => {
+            const card = document.createElement('div');
+            card.className = 'image-card';
+            
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'image-container';
+            
+            const img = document.createElement('img');
+            img.alt = description;
+            
+            const info = document.createElement('div');
+            info.className = 'image-info';
+            
+            const title = document.createElement('h3');
+            title.textContent = description;
+            
+            const pathText = document.createElement('div');
+            pathText.textContent = path;
+            pathText.style.fontSize = '12px';
+            pathText.style.wordBreak = 'break-all';
+            
+            const status = document.createElement('div');
+            status.className = 'status';
+            status.textContent = 'Loading...';
+            
+            info.appendChild(title);
+            info.appendChild(pathText);
+            info.appendChild(status);
+            
+            imageContainer.appendChild(img);
+            card.appendChild(imageContainer);
+            card.appendChild(info);
+            container.appendChild(card);
+            
+            log(`Testing image: ${path}`);
+            
+            img.onload = () => {
+                status.textContent = 'Loaded Successfully';
+                status.classList.add('success');
+                log(`✅ Loaded: ${path}`);
+            };
+            
+            img.onerror = () => {
+                status.textContent = 'Failed to Load';
+                status.classList.add('error');
+                log(`❌ Failed: ${path}`);
+                
+                // Show placeholder for failed images
+                img.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22200%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20fill%3D%22%23ddd%22%20width%3D%22200%22%20height%3D%22200%22%2F%3E%3Ctext%20fill%3D%22%23666%22%20font-family%3D%22sans-serif%22%20font-size%3D%2220%22%20dy%3D%22.35em%22%20text-anchor%3D%22middle%22%20x%3D%22100%22%20y%3D%22100%22%3EImage%20Not%20Found%3C%2Ftext%3E%3C%2Fsvg%3E';
+            };
+            
+            img.src = path;
+        };
+
+        const basePaths = [
+            '/img/World of Garu WebsiteImageLayers/1_House.png',
+            '/img/World of Garu WebsiteImageLayers/2_CloseLeftHill.png',
+            '/img/World of Garu WebsiteImageLayers/3_LeftHill.png',
+            '/img/World of Garu WebsiteImageLayers/4_CloseRightHill.png',
+            '/img/World of Garu WebsiteImageLayers/5_RightHill.png',
+            '/img/World of Garu WebsiteImageLayers/6_SmallHill.png',
+            '/img/World of Garu WebsiteImageLayers/7_IceMountain.png'
+        ];
+
+        const encodedPaths = basePaths.map(path => 
+            path.replace(/ /g, '%20')
+        );
+
+        document.getElementById('testDirectPaths').addEventListener('click', () => {
+            const container = document.getElementById('imageTest');
+            container.innerHTML = '';
+            log('Testing direct paths...');
+            
+            basePaths.forEach((path, index) => {
+                testImage(path, `Layer ${7-index} (Direct Path)`, container);
+            });
+        });
+
+        document.getElementById('testEncodedPaths').addEventListener('click', () => {
+            const container = document.getElementById('imageTest');
+            container.innerHTML = '';
+            log('Testing URL-encoded paths...');
+            
+            encodedPaths.forEach((path, index) => {
+                testImage(path, `Layer ${7-index} (URL-Encoded)`, container);
+            });
+        });
+
+        // Run the direct paths test on page load
+        window.onload = () => {
+            document.getElementById('testDirectPaths').click();
+        };
+    </script>
+</body>
+</html> 

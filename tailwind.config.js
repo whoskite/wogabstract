@@ -71,6 +71,7 @@ module.exports = {
         "accordion-up": "accordion-up 0.2s ease-out",
         "shine": "shine 3s infinite ease-in-out",
         "fade-in": "fadeIn 0.5s ease-in-out forwards",
+        "grow": "grow 1.2s ease-out forwards",
       },
       keyframes: {
         "accordion-down": {
@@ -94,6 +95,21 @@ module.exports = {
             opacity: "1", 
             transform: "translateY(0)" 
           },
+        },
+        "grow": {
+          "0%": { 
+            width: "10px", 
+            height: "10px", 
+            opacity: "0.8" 
+          },
+          "50%": { 
+            opacity: "0.9"
+          },
+          "100%": { 
+            width: "4000px", 
+            height: "4000px", 
+            opacity: "1" 
+          }
         },
       },
       backgroundImage: {

@@ -25,6 +25,7 @@ import DailyLogin from '@/components/DailyLogin';
 import LatestNews from '@/components/LatestNews';
 import GMChatWindow from '@/components/GMChatWindow';
 import { Inter } from "next/font/google";
+import { StaticBackground } from '@/components/StaticBackground';
 
 // Initialize Inter font
 const inter = Inter({ subsets: ["latin"] });
@@ -662,6 +663,9 @@ function DappContent() {
   return (
     <div className={`min-h-screen antialiased ${inter.className} ${isGlitching ? 'glitching' : ''}`}>
       <style dangerouslySetInnerHTML={{ __html: styles }} />
+      
+      {/* Static Background */}
+      <StaticBackground />
       
       {/* Loading animation overlay */}
       {isPageLoading && (

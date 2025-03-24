@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Cinzel } from "next/font/google";
 import "./globals.css";
 import ThirdwebProviderWrapper from './ThirdwebProviderWrapper';
 
 const inter = Inter({ subsets: ["latin"] });
+const cinzel = Cinzel({ 
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-cinzel"
+});
 
 export const metadata: Metadata = {
   title: "World of Garu - NFT Collection",
@@ -17,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`dark ${cinzel.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>

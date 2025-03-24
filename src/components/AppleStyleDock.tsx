@@ -19,7 +19,8 @@ import {
   Sword,
   User, 
   Settings,
-  Images
+  Images,
+  Beaker
 } from 'lucide-react';
 import useSoundEffect from '@/hooks/useSoundEffect';
 
@@ -73,6 +74,7 @@ const data: AppItem[] = [
   { title: "Lab Pass", href: "/battle-pass", icon: Trophy },
   { title: "Rewards", href: "/rewards", icon: Gift },
   { title: "Inventory", href: "/inventory", icon: Sword },
+  { title: "Test", href: "/test", icon: Beaker },
   { 
     title: "Profile", 
     href: "#profile", 

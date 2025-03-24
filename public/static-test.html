@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Static Background Test</title>
+    <!-- Add Google Fonts for medieval style -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            height: 100%;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* For smooth iOS scrolling */
+            touch-action: pan-y; /* Allow vertical touch scrolling */
+        }
+        
+        body {
+            position: relative;
+            width: 100%;
+            min-height: 100%;
+            /* Force body to be at least 3x viewport height to ensure scrollability */
+            min-height: 300vh;
+        }
+        
+        .background-container {
+            position: fixed;
+            inset: 0;
+            z-index: -10;
+            overflow: hidden;
+            pointer-events: none; /* Ensure mouse events pass through to content */
+        }
+        
+        .layer {
+            position: absolute;
+            bottom: -10%; /* Move down a bit to ensure visibility */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120%; /* Increase width for better coverage */
+            height: 120%; /* Increase height for better visibility */
+            background-position: bottom center;
+            background-repeat: no-repeat;
+            background-size: contain; /* Changed from cover to contain for better visibility */
+            will-change: transform;
+            transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1); /* Smoother transition */
+            pointer-events: none; /* Ensure mouse events pass through to content */
+            transform-origin: bottom center; /* Set transform origin for rotation effects */
+        }
+        
+        /* When scrolling, use a faster but still smooth transition */
+        .layer.scrolling {
+            transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        
+        .layer-1 { z-index: -3; background-image: url('/img/World of Garu WebsiteImageLayers/1_House.png'); }
+        .layer-2 { z-index: -4; background-image: url('/img/World of Garu WebsiteImageLayers/7_CloseLeftHill.png'); }
+        .layer-3 { z-index: -5; background-image: url('/img/World of Garu WebsiteImageLayers/6_LeftHill.png'); }
+        .layer-4 { z-index: -6; background-image: url('/img/World of Garu WebsiteImageLayers/5_CloseRightHill.png'); }
+        .layer-5 { z-index: -7; background-image: url('/img/World of Garu WebsiteImageLayers/10_RightHill.png'); }
+        .layer-6 { z-index: -8; background-image: url('/img/World of Garu WebsiteImageLayers/11_SmallHill.png'); }
+        .layer-7 { z-index: -9; background-image: url('/img/World of Garu WebsiteImageLayers/9_IceMountain.png'); }
+        
+        .gradient-top {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(128, 0, 128, 0.2), transparent);
+            mix-blend-mode: overlay;
+            z-index: -2;
+        }
+        
+        .gradient-bottom {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent 50%);
+            z-index: -1;
+        }
+        
+        .content {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            z-index: 1;
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin-top: 60px; /* Add space for the header */
+        }
+        
+        .middle-section {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 280px;
+            max-height: 90vh;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 12px;
+            padding: 16px;
+            backdrop-filter: blur(8px);
+            z-index: 10;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .left-sidebar {
+            left: 20px;
+        }
+        
+        .right-sidebar {
+            right: 20px;
+        }
+        
+        .center-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 600px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+            z-index: 5;
+        }
+        
+        .panel {
+            margin-bottom: 20px;
+            background-color: rgba(30, 30, 40, 0.7);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .latest-news {
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        
+        .news-item {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .news-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .news-date {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 8px;
+        }
+        
+        .daily-login {
+            margin-bottom: 20px;
+        }
+        
+        .login-days {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+        }
+        
+        .login-day {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            position: relative;
+        }
+        
+        .login-day.claimed {
+            background-color: #4f46e5;
+        }
+        
+        .login-day.current {
+            border: 2px solid #f0f;
+        }
+        
+        .login-reward {
+            font-size: 12px;
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        
+        .claim-button {
+            background-color: #6d28d9;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-weight: bold;
+            margin-top: 24px;
+            cursor: pointer;
+        }
+        
+        .claim-button:hover {
+            background-color: #5b21b6;
+        }
+        
+        .gm-chat {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .chat-messages {
+            margin-bottom: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .chat-message {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 16px;
+            background-color: rgba(60, 60, 80, 0.7);
+            max-width: 80%;
+        }
+        
+        .chat-input {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            background-color: rgba(40, 40, 60, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: white;
+        }
+        
+        .chat-input button {
+            background-color: #4f46e5;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: white;
+            cursor: pointer;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        
+        h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: #6d28d9;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        
+        .button:hover {
+            background-color: #5b21b6;
+        }
+        
+        .scroll-down {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #4f46e5;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            margin-top: 20px;
+            cursor: pointer;
+            animation: bounce 1s infinite alternate;
+        }
+        
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+        
+        .scroll-indicator {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(to right, #6d28d9, #4f46e5);
+            z-index: 1000;
+            width: 0%;
+            transition: width 0.1s;
+        }
+        
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 1000;
+            font-size: 24px;
+            backdrop-filter: blur(4px);
+        }
+        
+        .back-to-top.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .back-to-top:hover {
+            transform: scale(1.1);
+        }
+        
+        .toggle-parallax {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1000;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
+        
+        .header-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 12px 20px;
+        }
+        
+        .nav-logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.2s;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.1em;
+            color: #f5deb3;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .nav-logo:hover {
+            opacity: 0.8;
+        }
+        
+        .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .audio-btn {
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .audio-btn:hover {
+            color: white;
+        }
+        
+        .stat-pill {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 9999px;
+            padding: 4px 12px;
+            font-size: 14px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .connect-wallet-btn {
+            background-color: #fbbf24;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .connect-wallet-btn:hover {
+            background-color: #f59e0b;
+        }
+        
+        .icon {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .flame-icon {
+            color: #f97316;
+        }
+        
+        .zap-icon {
+            color: #fbbf24;
+        }
+        
+        .enter-world-btn {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            padding: 20px 40px;
+            color: #f5deb3;
+            font-family: 'serif';
+            border: 4px solid #b45309;
+            border-radius: 2px;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+            z-index: 100;
+            background: linear-gradient(to bottom, #92400e, #78350f);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 20px rgba(180, 83, 9, 0.4), inset 0 0 10px rgba(251, 191, 36, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s, opacity 0.7s;
+            opacity: 0;
+            pointer-events: none;
+            position: relative;
+        }
+        
+        .enter-world-btn::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            pointer-events: none;
+        }
+        
+        .enter-world-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-color: rgba(251, 191, 36, 0.1);
+            pointer-events: none;
+        }
+        
+        .enter-world-btn-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .enter-world-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            display: inline-block;
+        }
+        
+        .enter-world-btn.visible {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+        
+        .enter-world-btn:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 0 30px rgba(180, 83, 9, 0.6), inset 0 0 15px rgba(251, 191, 36, 0.3);
+            color: #fff8e1;
+        }
+        
+        /* Portal effect styles */
+        .portal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s ease;
+            background: radial-gradient(circle at center, rgba(147, 51, 234, 0.7) 0%, rgba(17, 24, 39, 0.9) 100%);
+            backdrop-filter: blur(8px);
+        }
+        
+        .portal-overlay.active {
+            opacity: 1;
+        }
+        
+        .portal-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background-color: rgba(147, 51, 234, 0.6);
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+        
+        .portal-circle.active {
+            animation: portalGrow 1.2s ease-out forwards;
+        }
+        
+        @keyframes portalGrow {
+            0% {
+                width: 10px;
+                height: 10px;
+                opacity: 0.8;
+            }
+            50% {
+                opacity: 0.9;
+            }
+            100% {
+                width: 4000px;
+                height: 4000px;
+                opacity: 1;
+            }
+        }
+        
+        .medieval-title {
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.1em;
+            color: #f5deb3;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+            border-bottom: 2px solid rgba(180, 83, 9, 0.5);
+            padding-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+        
+        /* Cloud layers */
+        .cloud-layer {
+            position: absolute;
+            background-size: contain;
+            background-repeat: no-repeat;
+            pointer-events: none;
+            will-change: transform;
+            transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
+            z-index: 5; /* Ensure clouds are above most elements */
+        }
+        
+        .cloud-1 { background-image: url('/img/World of Garu WebsiteImageLayers/4_cloud1.png'); opacity: 0.85; }
+        .cloud-2 { background-image: url('/img/World of Garu WebsiteImageLayers/2_cloud2.png'); opacity: 0.8; }
+        .cloud-3 { background-image: url('/img/World of Garu WebsiteImageLayers/3_cloud3.png'); opacity: 0.75; }
+        .cloud-4 { background-image: url('/img/World of Garu WebsiteImageLayers/4_cloud4.png'); opacity: 0.9; }
+        .cloud-5 { background-image: url('/img/World of Garu WebsiteImageLayers/5_cloud5.png'); opacity: 0.85; }
+        .cloud-6 { background-image: url('/img/World of Garu WebsiteImageLayers/6_cloud6.png'); opacity: 0.7; }
+        .cloud-7 { background-image: url('/img/World of Garu WebsiteImageLayers/8_cloud7.png'); opacity: 0.65; }
+    </style>
+</head>
+<body>
+    <div class="background-container">
+        <!-- Add a solid background color -->
+        <div style="position: absolute; inset: 0; background-color: #3b82f6; background-image: linear-gradient(to bottom, #1e40af, #3b82f6, #93c5fd); z-index: -10;"></div>
+        
+        <div class="layer layer-7"></div>
+        <div class="layer layer-6"></div>
+        <div class="layer layer-5"></div>
+        <div class="layer layer-4"></div>
+        <div class="layer layer-3"></div>
+        <div class="layer layer-2"></div>
+        <div class="layer layer-1"></div>
+        
+        <!-- Cloud layers -->
+        <div class="cloud-layer cloud-1"></div>
+        <div class="cloud-layer cloud-2"></div>
+        <div class="cloud-layer cloud-3"></div>
+        <div class="cloud-layer cloud-4"></div>
+        <div class="cloud-layer cloud-5"></div>
+        <div class="cloud-layer cloud-6"></div>
+        <div class="cloud-layer cloud-7"></div>
+        
+        <div class="gradient-top"></div>
+        <div class="gradient-bottom"></div>
+    </div>
+    
+    <!-- Portal effect overlay -->
+    <div id="portalOverlay" class="portal-overlay">
+        <div class="portal-circle" id="portalCircle"></div>
+    </div>
+    
+    <!-- Top Header Navigation -->
+    <header class="header-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">WORLD OF GARU</a>
+            <div class="nav-controls">
+                <!-- Audio toggle button -->
+                <button class="audio-btn" onclick="playClickSound()">
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                </button>
+                
+                <!-- Streak counter -->
+                <div class="stat-pill">
+                    <svg class="icon flame-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
+                    2 day streak
+                </div>
+                
+                <!-- Multiplier -->
+                <div class="stat-pill">
+                    <svg class="icon zap-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    1.5x
+                </div>
+                
+                <!-- Token amount -->
+                <div class="stat-pill">
+                    0.00 GARU
+                </div>
+                
+                <!-- Connect wallet button -->
+                <button class="connect-wallet-btn" onclick="playClickSound()">
+                    Connect Wallet
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <div class="scroll-progress" id="scrollProgress"></div>
+    <a href="#top" class="back-to-top" id="backToTop">↑</a>
+    <div class="toggle-parallax" id="toggleParallax">Parallax Active</div>
+    
+    <!-- Enter World Button - Will fade in on scroll -->
+    <button id="enterWorldBtn" class="enter-world-btn">
+        <span class="enter-world-btn-content">
+            <svg class="enter-world-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L4 7V17L12 22L20 17V7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 22V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 12L20 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 12L4 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Enter World
+        </span>
+    </button>
+    
+    <div class="content" id="top">
+        <h1 class="medieval-title">World of Garu</h1>
+        <p>Welcome to the immersive parallax experience. Scroll down to see the information panels.</p>
+        <p>You can scroll with: Mouse wheel, touchpad, touch screen, or using the button below</p>
+        <div class="scroll-down" onclick="smoothScrollBy(window.innerHeight / 3)">
+            Scroll Down ↓
+        </div>
+    </div>
+    
+    <!-- Middle Section with Sidebars -->
+    <div class="middle-section">
+        <!-- Left Sidebar - Latest News -->
+        <div class="sidebar left-sidebar">
+            <h3>Latest Updates</h3>
+            <div class="latest-news">
+                <div class="news-item">
+                    <div class="news-title">New Exploration Area Added</div>
+                    <div class="news-date">June 15, 2023</div>
+                    <p>The Mystic Forest area is now available for all players to explore!</p>
+                </div>
+                <div class="news-item">
+                    <div class="news-title">Limited Time Event</div>
+                    <div class="news-date">June 10, 2023</div>
+                    <p>Join the Summer Festival and earn exclusive rewards.</p>
+                </div>
+                <div class="news-item">
+                    <div class="news-title">Balance Updates</div>
+                    <div class="news-date">June 5, 2023</div>
+                    <p>Several character abilities have been rebalanced for improved gameplay.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Center Content -->
+        <div class="center-content">
+            <h2>Background Test Page</h2>
+            <p id="parallaxMode">Current mode: Parallax Active</p>
+            <p id="scrollInfo" class="text-sm">Scroll position: 0px</p>
+            
+            <div class="buttons">
+                <button 
+                    id="toggleBtn"
+                    class="button"
+                    style="margin-right: 10px;"
+                >
+                    Toggle Background Mode
+                </button>
+                <button
+                    onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
+                    class="button"
+                >
+                    Back to Top
+                </button>
+            </div>
+        </div>
+        
+        <!-- Right Sidebar - Daily Login and GM Chat -->
+        <div class="sidebar right-sidebar">
+            <!-- Daily Login -->
+            <div class="panel daily-login">
+                <h3>Daily Login</h3>
+                <p>Day 3 of 7 - Current Streak: 2</p>
+                
+                <div class="login-days">
+                    <div class="login-day claimed">
+                        1
+                        <span class="login-reward">1.0x</span>
+                    </div>
+                    <div class="login-day claimed">
+                        2
+                        <span class="login-reward">1.2x</span>
+                    </div>
+                    <div class="login-day current">
+                        3
+                        <span class="login-reward">1.5x</span>
+                    </div>
+                    <div class="login-day">
+                        4
+                        <span class="login-reward">1.8x</span>
+                    </div>
+                    <div class="login-day">
+                        5
+                        <span class="login-reward">2.0x</span>
+                    </div>
+                    <div class="login-day">
+                        6
+                        <span class="login-reward">2.5x</span>
+                    </div>
+                    <div class="login-day">
+                        7
+                        <span class="login-reward">3.0x</span>
+                    </div>
+                </div>
+                
+                <button class="claim-button">Claim Today's Reward</button>
+            </div>
+            
+            <!-- GM Chat -->
+            <div class="panel gm-chat">
+                <h3>GM Chat</h3>
+                <div class="chat-messages">
+                    <div class="chat-message">Welcome to World of Garu! How can I help you today?</div>
+                    <div class="chat-message" style="margin-left: auto; background-color: #4f46e5;">When is the next event?</div>
+                    <div class="chat-message">The Summer Festival begins next week! Stay tuned for details.</div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" placeholder="Type your message...">
+                    <button>Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Empty div to provide scrollable space -->
+    <div style="height: 100vh;"></div>
+    
+    <script>
+        // Variables to track scroll state
+        var lastScrollY = 0;
+        var scrollVelocity = 0;
+        var scrollDirection = null;
+        var scrollingTimeout = null;
+        // Reduced factors for slower, smoother effect
+        var springFactors = [0.05, 0.08, 0.12, 0.16, 0.20, 0.25, 0.30];
+        var lastMousePosition = { x: 0, y: 0 };
+        var damping = 0.05;
+        var parallaxEnabled = true;
+        
+        // Sound effects
+        function playClickSound() {
+            const audio = new Audio('/sounds/click.mp3');
+            audio.volume = 0.5;
+            audio.play().catch(e => console.error('Error playing sound:', e));
+        }
+        
+        function playHoverSound() {
+            const audio = new Audio('/sounds/hover.mp3');
+            audio.volume = 0.3;
+            audio.play().catch(e => console.error('Error playing sound:', e));
+        }
+        
+        function playPortalSound() {
+            const audio = new Audio('/sounds/portal.mp3');
+            audio.volume = 0.6;
+            audio.play().catch(e => console.error('Error playing sound:', e));
+        }
+        
+        // Add hover sound effects
+        document.querySelectorAll('.audio-btn, .connect-wallet-btn, .nav-logo').forEach(el => {
+            el.addEventListener('mouseenter', playHoverSound);
+        });
+        
+        // Add mouse movement tracking for subtle interactive effect
+        document.addEventListener('mousemove', function(e) {
+            var mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            var mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+            
+            // Apply damping for smoother mouse transitions
+            lastMousePosition.x += (mouseX - lastMousePosition.x) * damping;
+            lastMousePosition.y += (mouseY - lastMousePosition.y) * damping;
+        });
+        
+        // Move layers based on scroll position with smoother spring-like effects
+        function updateLayers() {
+            if (!parallaxEnabled) return;
+            
+            var scrollPosition = window.scrollY;
+            var windowHeight = window.innerHeight;
+            var documentHeight = document.body.scrollHeight;
+            
+            // Calculate delta and scrolling velocity with more damping
+            var delta = scrollPosition - lastScrollY;
+            lastScrollY = scrollPosition;
+            
+            // Update scroll direction
+            scrollDirection = delta > 0 ? 'down' : delta < 0 ? 'up' : null;
+            
+            // Calculate velocity with reduced factors and more damping
+            var newVelocity = Math.min(Math.max(delta * 0.05, -2), 2);
+            scrollVelocity = scrollVelocity + (newVelocity - scrollVelocity) * 0.1;
+            
+            // Mark elements as actively scrolling
+            var layers = document.querySelectorAll('.layer');
+            layers.forEach(function(layer) {
+                layer.classList.add('scrolling');
+                
+                // Update transform origin based on scroll direction
+                if (scrollDirection === 'down') {
+                    layer.style.transformOrigin = 'bottom center';
+                } else if (scrollDirection === 'up') {
+                    layer.style.transformOrigin = 'top center';
+                }
+            });
+            
+            // Clear any existing timeout and set a new one
+            if (scrollingTimeout) {
+                clearTimeout(scrollingTimeout);
+            }
+            
+            // Reset to default transition after scrolling stops - longer timeout
+            scrollingTimeout = setTimeout(function() {
+                scrollVelocity = 0;
+                scrollDirection = null;
+                layers.forEach(function(layer) {
+                    layer.classList.remove('scrolling');
+                });
+            }, 300);
+            
+            // Update the center content scroll info
+            document.getElementById('scrollInfo').textContent = `Scroll position: ${Math.round(scrollPosition)}px`;
+            
+            // Update scroll progress bar - smoother transition
+            var scrollPercentage = (scrollPosition / (documentHeight - windowHeight)) * 100;
+            document.getElementById('scrollProgress').style.width = `${scrollPercentage}%`;
+            
+            // Show/hide enter world button
+            var enterWorldBtn = document.getElementById('enterWorldBtn');
+            if (scrollPosition > 100) {
+                enterWorldBtn.classList.add('visible');
+            } else {
+                enterWorldBtn.classList.remove('visible');
+            }
+            
+            // Show/hide back to top button
+            var backToTop = document.getElementById('backToTop');
+            if (scrollPosition > windowHeight) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+            
+            // Apply parallax effect to each layer with reduced, smoother effects
+            layers.forEach(function(layer, index) {
+                // Reversed index to match the naming (layer-7 is furthest back)
+                var reverseIndex = layers.length - 1 - index;
+                
+                // Use the reduced spring factors
+                var springFactor = springFactors[reverseIndex];
+                
+                // Much lower scroll factors for more subtle effect
+                var scrollFactor = 0.008 + (reverseIndex * 0.006); // 0.008 to 0.045
+                
+                // Add mouse movement effect with small factor
+                var mouseX = lastMousePosition.x * (3 + reverseIndex * 2);
+                var mouseY = lastMousePosition.y * (1 + reverseIndex * 0.5);
+                
+                // Calculate translation with spring effect and mouse movement
+                var translateY = (scrollPosition * scrollFactor) + (scrollVelocity * springFactor) + mouseY;
+                var translateX = -50 + mouseX;
+                
+                // Add slight rotation effect for more dynamic movement - reduced
+                var rotateZ = scrollVelocity * springFactor * 0.05;
+                
+                // Apply the transform with a small staggered delay
+                setTimeout(function() {
+                    layer.style.transform = `translateX(${translateX}%) translateY(${translateY}px) rotateZ(${rotateZ}deg)`;
+                }, 5 * reverseIndex);
+            });
+            
+            // Apply parallax effect to cloud layers
+            var cloudLayers = document.querySelectorAll('.cloud-layer');
+            cloudLayers.forEach(function(cloud, index) {
+                // Define cloud-specific factors
+                var cloudSpringFactors = [0.35, 0.30, 0.40, 0.25, 0.45, 0.20, 0.50];
+                var cloudScrollFactors = [0.050, 0.040, 0.060, 0.035, 0.070, 0.030, 0.080];
+                var cloudMoveFactorsX = [20, 15, 25, 10, 30, 8, 35];
+                var cloudMoveFactorsY = [2, 3, 1, 4, 2, 5, 1.5];
+                
+                // Get the specific factors for this cloud
+                var springFactor = cloudSpringFactors[index];
+                var scrollFactor = cloudScrollFactors[index];
+                var moveFactorX = cloudMoveFactorsX[index];
+                var moveFactorY = cloudMoveFactorsY[index];
+                
+                // Add mouse movement effect with larger x-axis movement for clouds
+                var mouseX = lastMousePosition.x * moveFactorX * 1.5;
+                var mouseY = lastMousePosition.y * moveFactorY;
+                
+                // Calculate translation with spring effect and mouse movement
+                var translateY = (scrollPosition * scrollFactor * 1.2) + (scrollVelocity * springFactor) + mouseY;
+                var translateX = mouseX;
+                
+                // Fixed cloud positions at specific coordinates
+                var topPositions = [5, 2, 8, 4, 6, 3, 1]; // Lower heights to ensure visibility
+                var leftPositions = [15, 35, 65, 85, 50, 5, 75]; // Spread across width
+                var width = Math.max(15, 30 - index * 2); // Larger cloud sizes
+                
+                // Apply positioning
+                cloud.style.top = `${topPositions[index]}%`;
+                cloud.style.left = `${leftPositions[index]}%`;
+                cloud.style.width = `${width}%`;
+                cloud.style.height = 'auto';
+                
+                // Apply the transform with a small staggered delay
+                setTimeout(function() {
+                    cloud.style.transform = `translateX(${translateX}px) translateY(${translateY}px)`;
+                }, 5 * index);
+            });
+        }
+        
+        // Use a throttled scroll handler for smoother performance
+        var lastScrollTime = 0;
+        function throttledScroll() {
+            var now = Date.now();
+            if (now - lastScrollTime > 10) { // 10ms throttle for smoothness
+                lastScrollTime = now;
+                requestAnimationFrame(updateLayers);
+            }
+        }
+        
+        // Run the animation continuously for smoother results
+        function animationLoop() {
+            requestAnimationFrame(updateLayers);
+            requestAnimationFrame(animationLoop);
+        }
+        
+        // Handle wheel events specifically
+        function handleWheel(e) {
+            // Just let the browser handle the default scroll behavior
+            return true;
+        }
+        
+        // Initial update
+        updateLayers();
+        
+        // Make Enter World button visible immediately and add click handler
+        var enterWorldBtn = document.getElementById('enterWorldBtn');
+        if (enterWorldBtn) {
+            enterWorldBtn.classList.add('visible');
+            enterWorldBtn.addEventListener('click', function() {
+                // Activate portal effect
+                document.getElementById('portalOverlay').classList.add('active');
+                document.getElementById('portalCircle').classList.add('active');
+                
+                // Play portal sound
+                playPortalSound();
+                
+                // Navigate after delay to show effect
+                setTimeout(function() {
+                    window.location.href = '/';
+                }, 1200); // Delay to match animation
+            });
+            enterWorldBtn.addEventListener('mouseenter', playHoverSound);
+        }
+        
+        // Start animation loop
+        animationLoop();
+        
+        // Listen for scroll events
+        window.addEventListener('scroll', throttledScroll, { passive: true });
+        
+        // Listen for wheel events specifically
+        window.addEventListener('wheel', handleWheel, { passive: true });
+        
+        // Help users scroll smoothly with keyboard - smaller increments
+        window.addEventListener('keydown', function(e) {
+            var scrollAmount = window.innerHeight / 6; // Even smaller scroll amount for smoother movement
+            
+            if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+                smoothScrollBy(scrollAmount);
+                e.preventDefault();
+            }
+            else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+                smoothScrollBy(-scrollAmount);
+                e.preventDefault();
+            } 
+            else if (e.key === 'Home') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                e.preventDefault();
+            }
+            else if (e.key === 'End') {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                e.preventDefault();
+            }
+        });
+        
+        // Smoother scrolling function
+        function smoothScrollBy(amount) {
+            window.scrollBy({
+                top: amount,
+                behavior: 'smooth'
+            });
+        }
+        
+        // Toggle parallax effect
+        document.getElementById('toggleParallax').addEventListener('click', function() {
+            parallaxEnabled = !parallaxEnabled;
+            this.textContent = parallaxEnabled ? 'Parallax Active' : 'Static Background';
+            document.getElementById('parallaxMode').textContent = 'Current mode: ' + (parallaxEnabled ? 'Dynamic Parallax' : 'Static Background');
+            
+            if (!parallaxEnabled) {
+                // Reset all layers to default position
+                document.querySelectorAll('.layer').forEach(function(layer) {
+                    layer.style.transform = 'translateX(-50%)';
+                });
+            } else {
+                // Immediately update layers when re-enabling
+                updateLayers();
+            }
+        });
+        
+        // Toggle button in the center panel
+        document.getElementById('toggleBtn').addEventListener('click', function() {
+            // Trigger the same action as the toggle parallax button
+            document.getElementById('toggleParallax').click();
+        });
+        
+        // Add message to confirm page is interactive
+        console.log("Page fully loaded and interactive. Scroll should be working with mouse wheel.");
+    </script>
+</body>
+</html> 

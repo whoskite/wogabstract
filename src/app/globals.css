@@ -36,6 +36,46 @@
 	--input: 0 0% 14.9%;
 	--ring: 0 72.2% 50.6%;
 	--radius: 0.5rem;
+	--foreground-rgb: 255, 255, 255;
+	--background-start-rgb: 0, 0, 0;
+	--background-end-rgb: 0, 0, 0;
+}
+
+html, body {
+	overflow-x: hidden;
+	overflow-y: auto;
+	height: auto;
+	min-height: 100vh;
+	overscroll-behavior-y: none; /* Prevents pull-to-refresh on mobile browsers */
+}
+
+body {
+	color: rgb(var(--foreground-rgb));
+	background: linear-gradient(
+		to bottom,
+		rgb(var(--background-start-rgb)),
+		rgb(var(--background-end-rgb))
+	);
+	/* Make sure body allows scrolling */
+	position: relative;
+}
+
+/* Override any potential conflicting styles */
+html, body, #__next, main {
+	touch-action: auto !important;
+	-webkit-overflow-scrolling: touch !important;
+}
+
+/* Default scroll behavior */
+html {
+	scroll-behavior: smooth;
+}
+
+/* For browsers that support it, but smooth scrolling is problematic */
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
 }
 
 @layer base {
@@ -582,5 +622,26 @@
 .quotation-end {
 	bottom: 0;
 	right: 1rem;
+}
+
+/* Background effects */
+.background-gradient {
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	background: radial-gradient(circle at center, rgba(25, 0, 50, 0.3) 0%, rgba(10, 10, 20, 0.8) 100%);
+	z-index: -1;
+	mix-blend-mode: multiply;
+}
+
+.background-grid {
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	background-image: 
+		linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+	background-size: 30px 30px;
+	z-index: -1;
 }
 

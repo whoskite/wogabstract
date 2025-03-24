@@ -6,7 +6,7 @@ const nextConfig = {
     return config;
   },
   images: {
-    domains: ['ipfs.io'],
+    domains: ['ipfs.io', 'localhost'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -15,6 +15,10 @@ const nextConfig = {
       },
     ],
   },
+  // Enable standalone output for better file structure
+  output: 'standalone',
+  // Add support for static file serving
+  reactStrictMode: true,
 };
 
 export default nextConfig;
