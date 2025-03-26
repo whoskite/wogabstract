@@ -1,6 +1,6 @@
 # World of Garu Abstract (WOG Abstract)
 
-A decentralized platform for World of Garu featuring NFT minting functionality, daily login rewards, and latest news integration.
+A decentralized platform for World of Garu featuring NFT minting functionality, daily login rewards, and latest news integration..
 
 ## Features
 
